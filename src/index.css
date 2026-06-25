@@ -16,45 +16,47 @@
   }
 
   body {
-    @apply bg-dark text-light font-sans antialiased;
-    background-color: #141414;
-    color: #f0efed;
+    background-color: #080808;
+    color: #f0f0f0;
+    font-family: "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Custom Scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-dark-200;
+    background: #0f0f0f;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-primary-600 rounded-full;
+    background: #00ff88;
+    border-radius: 999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-accent;
+    background: #00cc6a;
   }
 }
 
 @layer components {
+  /* ✅ Using accent-dim instead of accent-dark */
   .btn-primary {
-    @apply bg-light text-dark px-6 py-3 rounded-full font-semibold 
-           hover:bg-accent hover:text-dark transition-all duration-300 
-           tracking-wide text-sm uppercase;
+    @apply bg-accent text-dark px-6 py-3 font-bold
+           hover:bg-accent-dim transition-all duration-300
+           tracking-widest text-xs uppercase;
   }
 
   .btn-outline {
-    @apply border border-light text-light px-6 py-3 rounded-full font-semibold 
-           hover:bg-light hover:text-dark transition-all duration-300 
-           tracking-wide text-sm uppercase;
+    @apply border border-accent text-accent px-6 py-3 font-semibold
+           hover:bg-accent hover:text-dark transition-all duration-300
+           tracking-widest text-xs uppercase;
   }
 
   .card {
-    @apply bg-dark-200 rounded-2xl overflow-hidden border border-dark-400
-           hover:border-primary-600 transition-all duration-300;
+    @apply bg-dark-200 overflow-hidden border border-dark-400
+           hover:border-accent/30 transition-all duration-300;
   }
 
   .section-padding {

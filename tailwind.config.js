@@ -4,7 +4,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Black to White theme - BREEMTECH
         primary: {
           50: "#f5f5f5",
           100: "#e8e8e8",
@@ -19,26 +18,31 @@ export default {
           950: "#1a1a1a",
         },
         dark: {
-          DEFAULT: "#141414",
-          100: "#1c1c1c",
-          200: "#232323",
-          300: "#2a2a2a",
-          400: "#333333",
+          DEFAULT: "#080808",
+          100: "#0f0f0f",
+          200: "#141414",
+          300: "#1a1a1a",
+          400: "#222222",
         },
         light: {
-          DEFAULT: "#f0efed",
-          100: "#e8e7e5",
-          200: "#d9d8d6",
+          DEFAULT: "#f0f0f0",
+          100: "#e8e8e8",
+          200: "#d9d9d9",
         },
-        accent: "#c9a84c",
+        // ✅ accent now green, with shade variants so hover:bg-accent-dim works
+        accent: {
+          DEFAULT: "#00ff88",
+          dim: "#00cc6a",
+          muted: "#00994f",
+        },
       },
       fontFamily: {
         sans: ["Inter", "sans-serif"],
         display: ["Syne", "sans-serif"],
       },
       backgroundImage: {
-        "gradient-dark": "linear-gradient(135deg, #141414 0%, #2a2a2a 100%)",
-        "gradient-light": "linear-gradient(135deg, #f0efed 0%, #d1d1d1 100%)",
+        "gradient-dark": "linear-gradient(135deg, #080808 0%, #141414 100%)",
+        "gradient-light": "linear-gradient(135deg, #f0f0f0 0%, #d1d1d1 100%)",
       },
     },
   },
