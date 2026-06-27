@@ -137,12 +137,12 @@ const CategoryCard = ({ cat, index }) => {  // ✅ Remove span prop - no longer 
   useEffect(() => {
     gsap.fromTo(
       cardRef.current,
-      { y: 60, opacity: 0, scale: 0.95 },
+      { y: 50, opacity: 0, scale: 0.95 },
       {
         y: 0,
         opacity: 1,
         scale: 1,
-        duration: 0.8,
+        duration: 0.4,
         delay: index * 0.1,
         ease: "power3.out",
         scrollTrigger: {
