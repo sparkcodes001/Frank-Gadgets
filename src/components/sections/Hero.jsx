@@ -233,9 +233,9 @@ const Hero = () => {
       {/* ── Content ── */}
       <div
         ref={contentRef}
-        className="relative z-10 flex-1 flex flex-col justify-end
-          max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8
-          pt-28 pb-24 sm:pb-32"
+        className="relative z-10 flex-1 flex flex-col justify-center
+    max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8
+    pt-20 pb-16 sm:pt-28 sm:pb-24 lg:justify-end lg:pb-32"
       >
         {/* Message Box */}
         <div className="mb-8 sm:mb-10">
@@ -243,15 +243,17 @@ const Hero = () => {
         </div>
 
         {/* CTA Buttons */}
-        <div className="hero-btns flex flex-wrap gap-3 mb-10 sm:mb-12">
-          {/* Shop Now button */}
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 mb-8 sm:mb-12 w-full sm:w-auto">
+          {/* Shop Now */}
           <Link
             to="/products"
             className="group relative overflow-hidden
-    bg-accent text-dark font-bold text-xs uppercase tracking-widest
-    px-7 py-3.5 flex items-center gap-2
-    hover:bg-accent-dim transition-all duration-300   
-    hover:shadow-xl hover:shadow-accent/30"
+      bg-accent text-dark font-bold text-xs uppercase tracking-widest
+      px-7 py-3.5 flex items-center justify-center gap-2
+      hover:bg-accent-dim transition-all duration-300
+      hover:shadow-xl hover:shadow-accent/30
+      w-full sm:w-auto"
           >
             <span className="relative z-10 flex items-center gap-2">
               Shop Now
@@ -262,46 +264,46 @@ const Hero = () => {
             </span>
             <span
               className="absolute inset-0 -translate-x-full group-hover:translate-x-full
-    bg-gradient-to-r from-transparent via-white/20 to-transparent
-    transition-transform duration-700 skew-x-12"
-            />
-          </Link>
-          
-          <Link
-            to="/products?category=mobile"
-            className="group border border-accent/40 text-light
-              font-semibold text-xs uppercase tracking-widest
-              px-7 py-3.5 flex items-center gap-2
-              hover:border-accent hover:text-accent
-              transition-all duration-300 backdrop-blur-sm
-              bg-black/30"
-          >
-            View Mobiles
-            <ArrowRight
-              size={14}
-              className="opacity-0 -translate-x-2 group-hover:opacity-100
-                group-hover:translate-x-0 transition-all duration-300"
+      bg-gradient-to-r from-transparent via-white/20 to-transparent
+      transition-transform duration-700 skew-x-12"
             />
           </Link>
 
-          <Link
-            to="/products?category=pc"
-            className="group border border-white/10 text-light/60
-              font-semibold text-xs uppercase tracking-widest
-              px-7 py-3.5 flex items-center gap-2
-              hover:border-accent/40 hover:text-light
-              transition-all duration-300 backdrop-blur-sm
-              bg-black/20"
-          >
-            View PCs
-            <ArrowRight
-              size={14}
-              className="opacity-0 -translate-x-2 group-hover:opacity-100
-                group-hover:translate-x-0 transition-all duration-300"
-            />
-          </Link>
+          {/* Bottom row — side by side on mobile */}
+          <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+            <Link
+              to="/products?category=mobile"
+              className="group flex-1 sm:flex-none border border-accent/40 text-light
+        font-semibold text-xs uppercase tracking-widest
+        px-5 sm:px-7 py-3.5 flex items-center justify-center gap-2
+        hover:border-accent hover:text-accent
+        transition-all duration-300 backdrop-blur-sm bg-black/30"
+            >
+              Mobiles
+              <ArrowRight
+                size={14}
+                className="opacity-0 -translate-x-2 group-hover:opacity-100
+          group-hover:translate-x-0 transition-all duration-300"
+              />
+            </Link>
+
+            <Link
+              to="/products?category=pc"
+              className="group flex-1 sm:flex-none border border-white/10 text-light/60
+        font-semibold text-xs uppercase tracking-widest
+        px-5 sm:px-7 py-3.5 flex items-center justify-center gap-2
+        hover:border-accent/40 hover:text-light
+        transition-all duration-300 backdrop-blur-sm bg-black/20"
+            >
+              View PCs
+              <ArrowRight
+                size={14}
+                className="opacity-0 -translate-x-2 group-hover:opacity-100
+          group-hover:translate-x-0 transition-all duration-300"
+              />
+            </Link>
+          </div>
         </div>
-
         {/* Stats */}
         <StatsBar />
       </div>

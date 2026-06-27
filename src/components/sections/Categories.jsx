@@ -14,6 +14,7 @@ import {
 
 gsap.registerPlugin(ScrollTrigger);
 
+// ✅ FIXED: Laptop image URL
 const categories = [
   {
     id: 1,
@@ -21,9 +22,8 @@ const categories = [
     path: "/products?category=mobile",
     icon: Smartphone,
     count: 120,
-    image:
-      "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop",
-    gradient: "from-amber-500/20 to-orange-500/20",
+    image: "/categoriesImg/smartphones.jpg", // ✅ Fixed
+    gradient: "from-blue-400/20 to-orange-500/20",
   },
   {
     id: 2,
@@ -31,8 +31,7 @@ const categories = [
     path: "/products?category=pc",
     icon: Monitor,
     count: 85,
-    image:
-      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&auto=format&fit=crop",
+    image: "/categoriesImg/laptops.jpg", // ✅ Fixed
     gradient: "from-blue-500/20 to-purple-500/20",
   },
   {
@@ -41,8 +40,7 @@ const categories = [
     path: "/products?category=accessories",
     icon: Headphones,
     count: 200,
-    image:
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop",
+    image: "/categoriesImg/headp.webp", // ✅ Fixed
     gradient: "from-green-500/20 to-emerald-500/20",
   },
   {
@@ -51,45 +49,45 @@ const categories = [
     path: "/products?category=tablet",
     icon: Tablet,
     count: 45,
-    image:
-      "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&auto=format&fit=crop",
+    image: "/categoriesImg/tab.webp", // ✅ Fixed
     gradient: "from-pink-500/20 to-rose-500/20",
   },
 ];
 
-// Top brands for marquee
+
+// ✅ FIXED: Brand logos using SimpleIcons CDN (no CORS issues)
 const brands = [
   {
     name: "Apple",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
+    logo: "https://cdn.simpleicons.org/apple/ffffff",
   },
   {
     name: "Samsung",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg",
+    logo: "https://cdn.simpleicons.org/samsung/ffffff",
   },
   {
     name: "Dell",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/4/48/Dell_Logo.svg",
+    logo: "https://cdn.simpleicons.org/dell/ffffff",
   },
   {
     name: "HP",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/a/ad/HP_logo_2012.svg",
+    logo: "https://cdn.simpleicons.org/hp/ffffff",
   },
   {
     name: "Lenovo",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/7/7c/Lenovo_logo.svg",
+    logo: "https://cdn.simpleicons.org/lenovo/ffffff",
   },
   {
-    name: "ASUS",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/2/2e/ASUS_Logo.svg",
+    name: "Asus",
+    logo: "https://cdn.simpleicons.org/asus/ffffff",
   },
   {
     name: "Google",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg",
+    logo: "https://cdn.simpleicons.org/google/ffffff",
   },
   {
     name: "OnePlus",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/8/83/OnePlus_Logo.svg",
+    logo: "https://cdn.simpleicons.org/oneplus/ffffff",
   },
 ];
 
@@ -131,7 +129,7 @@ const InfiniteMarquee = () => {
 };
 
 // ── Category Card ──
-const CategoryCard = ({ cat, index, span }) => {
+const CategoryCard = ({ cat, index }) => {  // ✅ Remove span prop - no longer needed
   const cardRef = useRef(null);
   const imageRef = useRef(null);
   const IconComponent = cat.icon;
@@ -161,11 +159,8 @@ const CategoryCard = ({ cat, index, span }) => {
       ref={cardRef}
       className={`group relative overflow-hidden rounded-3xl
         bg-dark-200 border border-dark-400
-        hover:border-accent/50 transition-all duration-500
-        hover:shadow-2xl hover:shadow-accent/10
-        ${span === "large" ? "row-span-2" : ""}
-        ${span === "wide" ? "col-span-2" : ""}
-        min-h-[200px] sm:min-h-[240px]`}
+        transition-all duration-500 hover:shadow-2xl
+        block w-full h-full`}
     >
       {/* Background Image */}
       <div className="absolute inset-0 overflow-hidden">
@@ -177,14 +172,12 @@ const CategoryCard = ({ cat, index, span }) => {
             group-hover:scale-110 group-hover:opacity-40
             transition-all duration-700"
         />
-        {/* Gradient overlay */}
         <div className={`absolute inset-0 bg-gradient-to-br ${cat.gradient}`} />
         <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/50 to-transparent" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 p-6 sm:p-8 h-full flex flex-col justify-end">
-        {/* Icon */}
         <div
           className="mb-4 w-12 h-12 rounded-2xl bg-accent/10 border border-accent/30
           flex items-center justify-center text-accent backdrop-blur-sm
@@ -194,39 +187,29 @@ const CategoryCard = ({ cat, index, span }) => {
           <IconComponent size={24} />
         </div>
 
-        {/* Name */}
-        <h3
-          className="font-display font-bold text-2xl sm:text-3xl text-light mb-2
-          group-hover:text-accent transition-colors duration-300"
-        >
+        <h3 className="font-display font-bold text-2xl sm:text-3xl text-light mb-2
+          group-hover:text-accent transition-colors duration-300">
           {cat.name}
         </h3>
 
-        {/* Count + Arrow */}
         <div className="flex items-center justify-between">
           <span className="text-primary-400 text-sm font-medium">
             {cat.count}+ Products
           </span>
-          <div
-            className="w-10 h-10 rounded-full bg-accent/10 border border-accent/30
+          <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/30
             flex items-center justify-center text-accent
-            group-hover:translate-x-1 transition-all duration-300"
-          >
+            group-hover:translate-x-1 transition-all duration-300">
             <ArrowRight size={18} />
           </div>
         </div>
       </div>
 
-      {/* Hover glow effect */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100
         bg-gradient-to-tr from-accent/5 via-transparent to-transparent
-        transition-opacity duration-500 pointer-events-none"
-      />
+        transition-opacity duration-500 pointer-events-none" />
     </Link>
   );
 };
-
 // ── Main Section ──
 const Categories = () => {
   const sectionRef = useRef(null);
@@ -279,18 +262,34 @@ const Categories = () => {
 
       {/* ── Bento Grid ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-auto gap-4 sm:gap-5">
-          {/* Large left card - Smartphones */}
-          <CategoryCard cat={categories[0]} index={0} span="large" />
-
-          {/* Top right - Laptops (wide) */}
-          <div className="sm:col-span-1 lg:col-span-2">
-            <CategoryCard cat={categories[1]} index={1} span="wide" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {/* Smartphones - tall left card */}
+          <div className="row-span-2 min-h-[500px]">
+            {" "}
+            {/* ✅ Add min-h here */}
+            <CategoryCard cat={categories[0]} index={0} className="h-full" />
           </div>
 
-          {/* Bottom right cards */}
-          <CategoryCard cat={categories[2]} index={2} />
-          <CategoryCard cat={categories[3]} index={3} />
+          {/* Laptops - wide top right */}
+          <div className="sm:col-span-1 lg:col-span-2 min-h-[240px]">
+            {" "}
+            {/* ✅ Add min-h here */}
+            <CategoryCard cat={categories[1]} index={1} />
+          </div>
+
+          {/* Accessories */}
+          <div className="min-h-[240px]">
+            {" "}
+            {/* ✅ wrap with min-h */}
+            <CategoryCard cat={categories[2]} index={2} />
+          </div>
+
+          {/* Tablets */}
+          <div className="min-h-[240px]">
+            {" "}
+            {/* ✅ wrap with min-h */}
+            <CategoryCard cat={categories[3]} index={3} />
+          </div>
         </div>
       </div>
 

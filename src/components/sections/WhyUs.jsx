@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -129,6 +129,15 @@ const WhyUs = () => {
     );
   }, []);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   return (
     <section ref={sectionRef} className="relative bg-dark-200 overflow-hidden">
       {/* Top accent line */}
@@ -208,63 +217,51 @@ const WhyUs = () => {
         {/* Perks Grid */}
         <div
           className="perks-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px
-          border border-white/5 bg-white/5"
+  border border-white/5 bg-white/5"
         >
-          {perks.map((perk, i) => (
+          {/* ✅ 3 on mobile, all 6 on desktop */}
+          {perks.slice(0, isMobile ? 3 : 6).map((perk, i) => (
             <div
               key={i}
               className="perk-card group bg-dark-200 p-6 sm:p-8
-                hover:bg-dark-300 transition-all duration-500
-                relative overflow-hidden cursor-default"
+        hover:bg-dark-300 transition-all duration-500
+        relative overflow-hidden cursor-default"
             >
-              {/* Hover accent line */}
+              {/* everything inside stays exactly the same */}
               <div
                 className="absolute top-0 left-0 right-0 h-px
-                bg-gradient-to-r from-accent to-transparent
-                scale-x-0 group-hover:scale-x-100
-                transition-transform duration-500 origin-left"
+        bg-gradient-to-r from-accent to-transparent
+        scale-x-0 group-hover:scale-x-100
+        transition-transform duration-500 origin-left"
               />
-
-              {/* Corner accent on hover */}
               <div
                 className="absolute bottom-0 right-0 w-16 h-16
-                bg-accent/5 group-hover:bg-accent/10
-                transition-all duration-500"
+        bg-accent/5 group-hover:bg-accent/10
+        transition-all duration-500"
                 style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
               />
-
-              {/* Icon */}
               <div
                 className="w-11 h-11 flex items-center justify-center
-                text-accent bg-accent/10 mb-5
-                group-hover:bg-accent group-hover:text-dark
-                transition-all duration-300"
+        text-accent bg-accent/10 mb-5
+        group-hover:bg-accent group-hover:text-dark
+        transition-all duration-300"
               >
                 {perk.icon}
               </div>
-
-              {/* Stat */}
               <div className="stat-number mb-3">
-                <span
-                  className="font-display font-bold text-2xl text-accent
-                  leading-none"
-                >
+                <span className="font-display font-bold text-2xl text-accent leading-none">
                   {perk.stat}
                 </span>
                 <span className="text-primary-600 text-[10px] uppercase tracking-widest ml-2">
                   {perk.statLabel}
                 </span>
               </div>
-
-              {/* Title */}
               <h3
                 className="font-semibold text-light text-base mb-2
-                group-hover:text-accent transition-colors duration-300"
+        group-hover:text-accent transition-colors duration-300"
               >
                 {perk.title}
               </h3>
-
-              {/* Desc */}
               <p className="text-primary-500 text-sm leading-relaxed">
                 {perk.desc}
               </p>
