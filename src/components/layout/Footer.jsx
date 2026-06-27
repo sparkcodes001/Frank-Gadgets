@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   FaFacebookF,
   FaInstagram,
@@ -10,27 +9,36 @@ import {
 } from "react-icons/fa6";
 import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
 
-gsap.registerPlugin(ScrollTrigger);
-
+// ✅ No ScrollTrigger needed anymore
 const Footer = () => {
   const footerRef = useRef(null);
 
   useEffect(() => {
-    gsap.fromTo(
-      ".footer-col",
-      { y: 50, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.3,
-        stagger: 0.12,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: footerRef.current,
-          start: "top 95%",
-        },
+    const el = footerRef.current;
+    if (!el) return;
+
+    const cols = el.querySelectorAll(".footer-col");
+    gsap.set(cols, { y: 40, opacity: 0 });
+
+    // ✅ IntersectionObserver — fires immediately when footer enters view
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          gsap.to(cols, {
+            y: 0,
+            opacity: 1,
+            duration: 0.45, // ✅ fast
+            stagger: 0.08, // ✅ tight stagger
+            ease: "power2.out",
+          });
+          observer.disconnect();
+        }
       },
+      { threshold: 0.05 }, // ✅ fires when just 5% of footer is visible
     );
+
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   const quickLinks = [
@@ -50,12 +58,12 @@ const Footer = () => {
     { name: "Tablets", path: "/products?category=tablet" },
   ];
 
-const socials = [
-  { icon: <FaFacebookF size={16} />, href: "#", name: "Facebook" },
-  { icon: <FaInstagram size={16} />, href: "#", name: "Instagram" },
-  { icon: <FaXTwitter size={16} />, href: "#", name: "Twitter" },
-  { icon: <FaYoutube size={16} />, href: "#", name: "Youtube" },
-];
+  const socials = [
+    { icon: <FaFacebookF size={16} />, href: "#", name: "Facebook" },
+    { icon: <FaInstagram size={16} />, href: "#", name: "Instagram" },
+    { icon: <FaXTwitter size={16} />, href: "#", name: "Twitter" },
+    { icon: <FaYoutube size={16} />, href: "#", name: "Youtube" },
+  ];
 
   return (
     <footer
@@ -67,7 +75,6 @@ const socials = [
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Col 1 - Brand */}
           <div className="footer-col space-y-5">
-            {/* Logo */}
             <Link to="/">
               <span className="font-display text-2xl font-bold tracking-widest">
                 BREEM<span className="text-accent">TECH</span>
@@ -77,15 +84,14 @@ const socials = [
               Your number one destination for the latest mobiles and PCs.
               Quality products, unbeatable prices.
             </p>
-            {/* Socials */}
             <div className="flex items-center gap-3 pt-2">
               {socials.map((social) => (
                 <a
                   key={social.name}
                   href={social.href}
-                  className="w-9 h-9 rounded-full border border-dark-400 
+                  className="w-9 h-9 rounded-full border border-dark-400
                     flex items-center justify-center text-primary-400
-                    hover:border-accent hover:text-accent 
+                    hover:border-accent hover:text-accent
                     transition-all duration-300"
                 >
                   {social.icon}
@@ -104,12 +110,12 @@ const socials = [
                 <li key={link.name}>
                   <Link
                     to={link.path}
-                    className="text-primary-400 text-sm hover:text-accent 
+                    className="text-primary-400 text-sm hover:text-accent
                       transition-colors duration-300 flex items-center gap-2 group"
                   >
                     <ArrowRight
                       size={14}
-                      className="opacity-0 -translate-x-2 group-hover:opacity-100 
+                      className="opacity-0 -translate-x-2 group-hover:opacity-100
                         group-hover:translate-x-0 transition-all duration-300 text-accent"
                     />
                     {link.name}
@@ -129,12 +135,12 @@ const socials = [
                 <li key={cat.name}>
                   <Link
                     to={cat.path}
-                    className="text-primary-400 text-sm hover:text-accent 
+                    className="text-primary-400 text-sm hover:text-accent
                       transition-colors duration-300 flex items-center gap-2 group"
                   >
                     <ArrowRight
                       size={14}
-                      className="opacity-0 -translate-x-2 group-hover:opacity-100 
+                      className="opacity-0 -translate-x-2 group-hover:opacity-100
                         group-hover:translate-x-0 transition-all duration-300 text-accent"
                     />
                     {cat.name}
@@ -174,7 +180,7 @@ const socials = [
               </li>
             </ul>
 
-            {/* Newsletter mini */}
+            {/* Newsletter */}
             <div className="pt-2">
               <p className="text-primary-400 text-xs mb-3">
                 Subscribe for deals & updates
@@ -183,8 +189,8 @@ const socials = [
                 <input
                   type="email"
                   placeholder="Your email..."
-                  className="bg-dark-300 text-light text-xs px-4 py-2.5 
-                    rounded-l-full border border-dark-400 focus:outline-none 
+                  className="bg-dark-300 text-light text-xs px-4 py-2.5
+                    rounded-l-full border border-dark-400 focus:outline-none
                     focus:border-accent w-full placeholder:text-primary-600
                     transition-colors duration-300"
                 />
@@ -203,7 +209,7 @@ const socials = [
       {/* Bottom Bar */}
       <div className="border-t border-dark-400">
         <div
-          className="max-w-7xl mx-auto px-6 py-5 
+          className="max-w-7xl mx-auto px-6 py-5
           flex flex-col md:flex-row items-center justify-between gap-3"
         >
           <p className="text-primary-500 text-xs">
@@ -212,15 +218,15 @@ const socials = [
           <div className="flex items-center gap-5">
             <Link
               to="/privacy"
-              className="text-primary-500 text-xs hover:text-accent 
-                transition-colors duration-300"
+              className="text-primary-500 text-xs
+              hover:text-accent transition-colors duration-300"
             >
               Privacy Policy
             </Link>
             <Link
               to="/terms"
-              className="text-primary-500 text-xs hover:text-accent 
-                transition-colors duration-300"
+              className="text-primary-500 text-xs
+              hover:text-accent transition-colors duration-300"
             >
               Terms of Service
             </Link>

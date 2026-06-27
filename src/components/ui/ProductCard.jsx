@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ShoppingCart, Heart, Eye, Check } from "lucide-react";
 import useCartStore from "../../store/cartStore";
 import useWishlistStore from "../../store/wishlistStore";
 
-gsap.registerPlugin(ScrollTrigger);
+// ✅ Check if mobile once — no ScrollTrigger on mobile at all
+const isMobile = window.innerWidth < 1024;
 
 const ProductCard = ({ product, index }) => {
   const cardRef = useRef(null);
@@ -23,22 +23,36 @@ const ProductCard = ({ product, index }) => {
   const isInCart = cartItems.some((item) => item.id === product.id);
 
   useEffect(() => {
-    gsap.fromTo(
-      cardRef.current,
-      { y: 40, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        // ✅ Longer duration for long devices
-        duration: 0.9,
-        delay: index * 0.12,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: cardRef.current,
-          start: "top 95%",
-        },
+    const el = cardRef.current;
+    if (!el) return;
+
+    // ✅ On mobile: no animation, just show cards immediately
+    if (isMobile) {
+      gsap.set(el, { opacity: 1, y: 0 });
+      return;
+    }
+
+    // ✅ Desktop only: fast IntersectionObserver animation
+    gsap.set(el, { opacity: 0, y: 25 });
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          gsap.to(el, {
+            opacity: 1,
+            y: 0,
+            duration: 0.35, // ✅ fast
+            delay: (index % 4) * 0.05, // ✅ max delay is only 0.15s (caps at 4 cols)
+            ease: "power2.out",
+          });
+          observer.disconnect();
+        }
       },
+      { threshold: 0.05 }, // ✅ fires immediately when just 5% visible
     );
+
+    observer.observe(el);
+    return () => observer.disconnect();
   }, [index]);
 
   const handleAddToCart = (e) => {
@@ -80,10 +94,6 @@ const ProductCard = ({ product, index }) => {
         transition-all duration-300 hover:shadow-xl hover:shadow-accent/5"
     >
       {/* ── Image ── */}
-      {/*
-        Mobile:  aspect-square  → small square card (2 per row)
-        sm+:     h-44 sm:h-48   → taller card (normal)
-      */}
       <div className="relative overflow-hidden aspect-square sm:aspect-auto sm:h-48 bg-dark-300 rounded-t-xl">
         <img
           src={product.image}
@@ -204,16 +214,14 @@ const ProductCard = ({ product, index }) => {
             )}
           </div>
 
-          {/* Mobile: icon only button | Desktop: text button */}
+          {/* Mobile: icon only | Desktop: text + icon */}
           <button
             onClick={handleAddToCart}
             disabled={isInCart && !justAdded}
             className={`flex items-center justify-center gap-1
               transition-all duration-300 active:scale-95
-              // Mobile: small square icon button
               w-6 h-6 sm:w-auto sm:h-auto
-              sm:px-3.5 sm:py-2
-              rounded-lg
+              sm:px-3.5 sm:py-2 rounded-lg
               text-[9px] sm:text-[10px] font-bold uppercase tracking-wider
               ${
                 isInCart && !justAdded
