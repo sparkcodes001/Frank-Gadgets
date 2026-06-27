@@ -18,7 +18,7 @@ const Newsletter = () => {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: sectionRef.current,
-        start: "top 80%",
+        start: "top 95%",
       },
     });
 
