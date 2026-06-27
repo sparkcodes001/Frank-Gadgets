@@ -14,6 +14,8 @@ import ProductCard from "../components/ui/ProductCard";
 import useWishlistStore from "../store/wishlistStore";
 import useCartStore from "../store/cartStore";
 
+const isMobile = window.innerWidth < 1024;
+
 // ─── Empty State ──────────────────────────────────────────────────────────────
 const EmptyWishlist = () => {
   const emptyRef = useRef(null);
@@ -67,30 +69,29 @@ const Wishlist = () => {
   const moveAllToCart = useWishlistStore((state) => state.moveAllToCart);
 
   const addToCart = useCartStore((state) => state.addItem);
-  const cartItems = useCartStore((state) => state.items);
 
   const pageRef = useRef(null);
   const headerRef = useRef(null);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (isMobile) return;
 
     gsap.fromTo(
       headerRef.current,
-      { y: -30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" },
+      { y: -20, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" },
     );
 
     gsap.fromTo(
       ".wishlist-card",
-      { y: 40, opacity: 0 },
+      { y: 30, opacity: 0 },
       {
         y: 0,
         opacity: 1,
-        duration: 0.5,
-        stagger: 0.08,
-        ease: "power3.out",
-        delay: 0.2,
+        duration: 0.35,
+        stagger: 0.05,
+        ease: "power2.out",
+        delay: 0.1,
       },
     );
   }, []);
@@ -103,14 +104,13 @@ const Wishlist = () => {
     gsap.to(".wishlist-card", {
       scale: 0.8,
       opacity: 0,
-      duration: 0.3,
-      stagger: 0.05,
+      duration: 0.25,
+      stagger: 0.04,
       ease: "power2.in",
       onComplete: clearWishlist,
     });
   };
 
-  // Stats
   const totalSavings = wishlistItems.reduce(
     (sum, item) => sum + (item.oldPrice ? item.oldPrice - item.price : 0),
     0,
@@ -121,7 +121,7 @@ const Wishlist = () => {
   return (
     <div ref={pageRef} className="min-h-screen bg-dark pt-20 sm:pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+        {/* ── Header ── */}
         <div
           ref={headerRef}
           className="flex flex-col sm:flex-row sm:items-end
@@ -133,10 +133,7 @@ const Wishlist = () => {
               text-light mb-2"
             >
               My{" "}
-              <span
-                className="text-transparent bg-clip-text bg-gradient-to-r
-                from-accent to-light"
-              >
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-light">
                 Wishlist
               </span>
             </h1>
@@ -175,12 +172,9 @@ const Wishlist = () => {
           )}
         </div>
 
-        {/* Stats bar */}
+        {/* ── Stats Bar ── */}
         {wishlistItems.length > 0 && (
-          <div
-            className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4
-            mb-8 sm:mb-10"
-          >
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
             {[
               {
                 label: "Saved Items",
@@ -213,8 +207,8 @@ const Wishlist = () => {
                   p-4 flex items-center gap-3"
               >
                 <div
-                  className={`w-9 h-9 rounded-xl bg-dark-300 border
-                  border-dark-400 flex items-center justify-center shrink-0`}
+                  className="w-9 h-9 rounded-xl bg-dark-300 border border-dark-400
+                  flex items-center justify-center shrink-0"
                 >
                   <Icon size={16} className={color} />
                 </div>
@@ -231,40 +225,34 @@ const Wishlist = () => {
           </div>
         )}
 
-        {/* Content */}
+        {/* ── Content ── */}
         {wishlistItems.length === 0 ? (
           <EmptyWishlist />
         ) : (
           <>
-            {/* Grid */}
-            <div
-              className="grid grid-cols-1 sm:grid-cols-2
-              lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
-            >
+            {/* ✅ Same grid as Products page — 2 cols mobile, 3-4 desktop */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
               {wishlistItems.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="wishlist-card relative"
-                  onContextMenu={(e) => {
-                    // Add remove button functionality via context menu or hover
-                    e.preventDefault();
-                  }}
-                >
-                  {/* ProductCard with delete overlay */}
-                  <ProductCard product={item} index={index} />
+                // ✅ group class added so delete button hover works
+                <div key={item.id} className="wishlist-card group relative">
+                  <ProductCard product={item} index={isMobile ? 0 : index} />
 
-                  {/* Delete button overlay */}
+                  {/* ✅ Delete button — visible on hover via group */}
                   <button
                     onClick={() => removeFromWishlist(item.id)}
-                    className="absolute top-3 right-3 z-10 w-8 h-8 rounded-xl
+                    className="absolute top-2 right-2 z-20
+                      w-7 h-7 sm:w-8 sm:h-8 rounded-xl
                       bg-dark/80 backdrop-blur-sm border border-dark-400
                       flex items-center justify-center
-                      text-red-400 hover:text-red-300 hover:border-red-400/50
-                      transition-all duration-300 hover:scale-110 active:scale-95
-                      opacity-0 hover:opacity-100 group-hover:opacity-100"
+                      text-red-400 hover:text-red-300
+                      hover:border-red-400/50 hover:bg-red-500/10
+                      transition-all duration-200
+                      hover:scale-110 active:scale-95
+                      // ✅ always visible on mobile, hover on desktop
+                      opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                     title="Remove from Wishlist"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={13} />
                   </button>
                 </div>
               ))}

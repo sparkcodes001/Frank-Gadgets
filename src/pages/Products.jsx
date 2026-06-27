@@ -8,10 +8,11 @@ import {
   ChevronDown,
   Grid3x3,
   LayoutGrid,
-  ChevronUp,
 } from "lucide-react";
 import { products } from "../data/products";
 import ProductCard from "../components/ui/ProductCard";
+
+const isMobile = window.innerWidth < 1024;
 
 const Products = () => {
   const [searchParams] = useSearchParams();
@@ -37,6 +38,11 @@ const Products = () => {
     { value: "accessories", label: "Accessories", icon: "🎧" },
     { value: "tablet", label: "Tablets", icon: "📱" },
   ];
+
+  // ✅ Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
 
   // ── Filter & Sort ──
   const filteredProducts = products
@@ -67,15 +73,17 @@ const Products = () => {
 
   // ── GSAP entrance ──
   useEffect(() => {
+    if (isMobile) return;
+
     gsap.fromTo(
       headerRef.current,
-      { y: -30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" },
+      { y: -20, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" },
     );
     gsap.fromTo(
       ".sidebar-anim",
-      { x: -30, opacity: 0 },
-      { x: 0, opacity: 1, duration: 0.8, delay: 0.2, ease: "power3.out" },
+      { x: -20, opacity: 0 },
+      { x: 0, opacity: 1, duration: 0.4, delay: 0.1, ease: "power2.out" },
     );
   }, []);
 
@@ -86,18 +94,18 @@ const Products = () => {
       gsap.fromTo(
         drawerRef.current,
         { y: "100%" },
-        { y: "0%", duration: 0.4, ease: "power3.out" },
+        { y: "0%", duration: 0.35, ease: "power3.out" },
       );
     } else {
       gsap.to(drawerRef.current, {
         y: "100%",
-        duration: 0.3,
+        duration: 0.25,
         ease: "power3.in",
       });
     }
   }, [showFilters]);
 
-  // Sync URL params
+  // ── Sync URL params ──
   useEffect(() => {
     const cat = searchParams.get("category");
     if (cat) setSelectedCategory(cat);
@@ -111,15 +119,12 @@ const Products = () => {
     setSortBy("featured");
   };
 
-  // ── Filter Content (reused in sidebar + drawer) ──
+  // ── Filter Content ──
   const FilterContent = () => (
     <div className="space-y-6">
       {/* Category */}
       <div>
-        <h3
-          className="font-display font-bold text-light text-xs
-          uppercase tracking-widest mb-3"
-        >
+        <h3 className="font-display font-bold text-light text-xs uppercase tracking-widest mb-3">
           Category
         </h3>
         <div className="space-y-1">
@@ -130,8 +135,8 @@ const Products = () => {
                 setSelectedCategory(cat.value);
                 setShowFilters(false);
               }}
-              className={`w-full text-left px-3 py-2.5 rounded-xl
-                text-sm transition-all duration-300 flex items-center gap-2.5
+              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm
+                transition-all duration-200 flex items-center gap-2.5
                 ${
                   selectedCategory === cat.value
                     ? "bg-accent text-dark font-semibold"
@@ -147,16 +152,10 @@ const Products = () => {
 
       {/* Brand */}
       <div>
-        <h3
-          className="font-display font-bold text-light text-xs
-          uppercase tracking-widest mb-3"
-        >
+        <h3 className="font-display font-bold text-light text-xs uppercase tracking-widest mb-3">
           Brand
         </h3>
-        <div
-          className="space-y-2 max-h-48 overflow-y-auto
-          scrollbar-thin scrollbar-thumb-dark-400 scrollbar-track-transparent pr-1"
-        >
+        <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-dark-400 scrollbar-track-transparent pr-1">
           {brands.map((brand) => (
             <label
               key={brand}
@@ -165,7 +164,7 @@ const Products = () => {
               <div
                 onClick={() => setSelectedBrand(brand)}
                 className={`w-4 h-4 rounded-full border-2 flex items-center
-                  justify-center shrink-0 transition-all duration-300
+                  justify-center shrink-0 transition-all duration-200
                   ${
                     selectedBrand === brand
                       ? "border-accent bg-accent"
@@ -190,10 +189,7 @@ const Products = () => {
 
       {/* Price Range */}
       <div>
-        <h3
-          className="font-display font-bold text-light text-xs
-          uppercase tracking-widest mb-3"
-        >
+        <h3 className="font-display font-bold text-light text-xs uppercase tracking-widest mb-3">
           Price Range
         </h3>
         <input
@@ -218,7 +214,7 @@ const Products = () => {
         onClick={resetFilters}
         className="w-full bg-dark-300 border border-dark-400 text-primary-400
           py-3 rounded-2xl text-xs font-bold uppercase tracking-widest
-          hover:border-accent hover:text-accent transition-all duration-300"
+          hover:border-accent hover:text-accent transition-all duration-200"
       >
         Reset All Filters
       </button>
@@ -230,15 +226,9 @@ const Products = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ── Page Header ── */}
         <div ref={headerRef} className="mb-6 sm:mb-8">
-          <h1
-            className="font-display font-bold
-            text-3xl sm:text-4xl lg:text-5xl text-light mb-2"
-          >
+          <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-light mb-2">
             All{" "}
-            <span
-              className="text-transparent bg-clip-text bg-gradient-to-r
-              from-accent to-light"
-            >
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-light">
               Products
             </span>
           </h1>
@@ -253,8 +243,7 @@ const Products = () => {
           <div className="relative flex-1">
             <Search
               size={16}
-              className="absolute left-4 top-1/2 -translate-y-1/2
-                text-primary-600 pointer-events-none"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-600 pointer-events-none"
             />
             <input
               type="text"
@@ -262,9 +251,8 @@ const Products = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-dark-200 border border-dark-400 text-light text-sm
-                pl-11 pr-10 py-3 rounded-2xl
-                focus:outline-none focus:border-accent transition-colors duration-300
-                placeholder:text-primary-600"
+                pl-11 pr-10 py-3 rounded-2xl focus:outline-none focus:border-accent
+                transition-colors duration-200 placeholder:text-primary-600"
             />
             {searchQuery && (
               <button
@@ -286,8 +274,7 @@ const Products = () => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="appearance-none w-full bg-dark-200 border border-dark-400
                   text-light text-sm pl-4 pr-9 py-3 rounded-2xl
-                  focus:outline-none focus:border-accent transition-colors
-                  cursor-pointer"
+                  focus:outline-none focus:border-accent transition-colors cursor-pointer"
               >
                 <option value="featured">Featured</option>
                 <option value="price-low">Price ↑</option>
@@ -297,35 +284,23 @@ const Products = () => {
               </select>
               <ChevronDown
                 size={15}
-                className="absolute right-3 top-1/2 -translate-y-1/2
-                  text-primary-600 pointer-events-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-600 pointer-events-none"
               />
             </div>
 
-            {/* Grid toggle - desktop only */}
-            <div
-              className="hidden lg:flex items-center gap-1
-              bg-dark-200 border border-dark-400 rounded-2xl p-1"
-            >
+            {/* Grid toggle — desktop only */}
+            <div className="hidden lg:flex items-center gap-1 bg-dark-200 border border-dark-400 rounded-2xl p-1">
               <button
                 onClick={() => setGridCols(3)}
-                className={`p-2 rounded-xl transition-all duration-300
-                  ${
-                    gridCols === 3
-                      ? "bg-accent text-dark"
-                      : "text-primary-600 hover:text-accent"
-                  }`}
+                className={`p-2 rounded-xl transition-all duration-200
+                  ${gridCols === 3 ? "bg-accent text-dark" : "text-primary-600 hover:text-accent"}`}
               >
                 <Grid3x3 size={16} />
               </button>
               <button
                 onClick={() => setGridCols(4)}
-                className={`p-2 rounded-xl transition-all duration-300
-                  ${
-                    gridCols === 4
-                      ? "bg-accent text-dark"
-                      : "text-primary-600 hover:text-accent"
-                  }`}
+                className={`p-2 rounded-xl transition-all duration-200
+                  ${gridCols === 4 ? "bg-accent text-dark" : "text-primary-600 hover:text-accent"}`}
               >
                 <LayoutGrid size={16} />
               </button>
@@ -334,9 +309,8 @@ const Products = () => {
             {/* Mobile filter button */}
             <button
               onClick={() => setShowFilters(true)}
-              className="lg:hidden flex items-center gap-2
-                bg-dark-200 border border-dark-400 text-light text-sm
-                px-4 py-3 rounded-2xl hover:border-accent/50
+              className="lg:hidden flex items-center gap-2 bg-dark-200 border border-dark-400
+                text-light text-sm px-4 py-3 rounded-2xl hover:border-accent/50
                 transition-colors shrink-0"
             >
               <SlidersHorizontal size={16} />
@@ -347,37 +321,30 @@ const Products = () => {
 
         {/* ── Main Layout ── */}
         <div className="flex gap-6">
-          {/* ── Desktop Sidebar ── */}
+          {/* Desktop Sidebar */}
           <aside className="sidebar-anim hidden lg:block w-60 xl:w-64 shrink-0">
-            <div
-              className="bg-dark-200 border border-dark-400
-              rounded-2xl p-5 sticky top-24"
-            >
+            <div className="bg-dark-200 border border-dark-400 rounded-2xl p-5 sticky top-24">
               <FilterContent />
             </div>
           </aside>
 
-          {/* ── Products Grid ── */}
+          {/* Products Grid */}
           <div className="flex-1 min-w-0">
             {filteredProducts.length > 0 ? (
               <div
-                className={`grid gap-3 sm:gap-4 lg:gap-5 grid-cols-2 sm:grid-cols-2
-                   ${
-                     gridCols === 3
-                       ? "lg:grid-cols-3"
-                       : "lg:grid-cols-3 xl:grid-cols-4"
-                   }`}
+                className={`grid gap-3 sm:gap-4 lg:gap-5 grid-cols-2
+                  ${gridCols === 3 ? "lg:grid-cols-3" : "lg:grid-cols-3 xl:grid-cols-4"}`}
               >
                 {filteredProducts.map((product, i) => (
-                  <ProductCard key={product.id} product={product} index={i} />
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    index={isMobile ? 0 : i}
+                  />
                 ))}
               </div>
             ) : (
-              // Empty State
-              <div
-                className="flex flex-col items-center justify-center
-                py-24 text-center"
-              >
+              <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="text-6xl mb-4">😔</div>
                 <p className="text-light font-display font-bold text-xl mb-2">
                   No Products Found
@@ -395,7 +362,6 @@ const Products = () => {
       </div>
 
       {/* ── Mobile Filter Drawer ── */}
-      {/* Backdrop */}
       {showFilters && (
         <div
           className="fixed inset-0 bg-dark/80 backdrop-blur-sm z-40 lg:hidden"
@@ -403,19 +369,13 @@ const Products = () => {
         />
       )}
 
-      {/* Drawer */}
       <div
         ref={drawerRef}
         className="fixed bottom-0 left-0 right-0 z-50 lg:hidden
-          bg-dark-200 border-t border-dark-400
-          rounded-t-3xl p-6 pb-10
-          max-h-[85vh] overflow-y-auto
-          translate-y-full"
+          bg-dark-200 border-t border-dark-400 rounded-t-3xl p-6 pb-10
+          max-h-[85vh] overflow-y-auto translate-y-full"
       >
-        {/* Drawer handle */}
         <div className="w-12 h-1 bg-dark-400 rounded-full mx-auto mb-6" />
-
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-display font-bold text-light text-lg">Filters</h2>
           <button
@@ -427,7 +387,6 @@ const Products = () => {
             <X size={16} />
           </button>
         </div>
-
         <FilterContent />
       </div>
     </div>

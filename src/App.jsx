@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ScrollToTop from "./components/ScrollToTop";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import Home from "./pages/Home";
@@ -11,6 +12,7 @@ import Wishlist from "./pages/Wishlist";
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop /> {/* ✅ THIS was missing */}
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
