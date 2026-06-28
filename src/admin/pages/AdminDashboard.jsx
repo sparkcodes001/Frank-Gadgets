@@ -5,7 +5,6 @@ import {
   TrendingUp,
   ShoppingCart,
   Users,
-  Package,
   ArrowRight,
   ArrowUp,
   ArrowDown,
@@ -81,15 +80,8 @@ const AdminDashboard = () => {
     gsap.fromTo(
       ".stat-card",
       { y: 30, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.5,
-        stagger: 0.1,
-        ease: "power3.out",
-      },
+      { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: "power3.out" },
     );
-
     gsap.fromTo(
       ".chart-card",
       { y: 40, opacity: 0 },
@@ -102,9 +94,8 @@ const AdminDashboard = () => {
         delay: 0.4,
       },
     );
-
     gsap.fromTo(
-      ".table-row",
+      ".order-card",
       { x: -20, opacity: 0 },
       {
         x: 0,
@@ -201,8 +192,7 @@ const AdminDashboard = () => {
               <div className="flex items-start justify-between mb-4">
                 <div
                   className={`w-11 h-11 rounded-xl ${c.bg}
-                  border ${c.border} flex items-center justify-center
-                  ${c.text}`}
+                  border ${c.border} flex items-center justify-center ${c.text}`}
                 >
                   {stat.icon}
                 </div>
@@ -326,12 +316,16 @@ const AdminDashboard = () => {
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Recent Orders */}
+        {/* ✅ Recent Orders - Fully Redesigned */}
         <div
           className="lg:col-span-2 bg-dark-200 border border-dark-400
-          rounded-2xl p-5"
+          rounded-2xl overflow-hidden"
         >
-          <div className="flex items-center justify-between mb-5">
+          {/* Header */}
+          <div
+            className="flex items-center justify-between
+            px-5 py-4 border-b border-dark-400"
+          >
             <div>
               <h3 className="text-light font-bold text-base">Recent Orders</h3>
               <p className="text-primary-500 text-xs mt-0.5">
@@ -341,61 +335,123 @@ const AdminDashboard = () => {
             <Link
               to="/admin/orders"
               className="flex items-center gap-1.5 text-accent
-                text-xs font-semibold hover:gap-2.5 transition-all duration-300"
+                text-xs font-semibold hover:gap-3
+                transition-all duration-300 group"
             >
-              View All <ArrowRight size={14} />
+              View All
+              <ArrowRight
+                size={14}
+                className="group-hover:translate-x-1 transition-transform duration-300"
+              />
             </Link>
           </div>
 
-          <div className="space-y-3">
-            {recentOrders.length === 0 ? (
-              <p className="text-primary-500 text-sm text-center py-8">
-                No orders yet
+          {/* Table Head */}
+          <div
+            className="hidden sm:grid grid-cols-12 gap-3
+            px-5 py-2.5 border-b border-dark-400"
+          >
+            <div className="col-span-4">
+              <p className="text-primary-600 text-[10px] font-semibold uppercase tracking-wider">
+                Customer
               </p>
+            </div>
+            <div className="col-span-4">
+              <p className="text-primary-600 text-[10px] font-semibold uppercase tracking-wider">
+                Product
+              </p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-primary-600 text-[10px] font-semibold uppercase tracking-wider">
+                Amount
+              </p>
+            </div>
+            <div className="col-span-2 text-right">
+              <p className="text-primary-600 text-[10px] font-semibold uppercase tracking-wider">
+                Status
+              </p>
+            </div>
+          </div>
+
+          {/* Orders List */}
+          <div className="divide-y divide-dark-400">
+            {recentOrders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <ShoppingCart size={32} className="text-primary-600 mb-2" />
+                <p className="text-primary-500 text-sm">No orders yet</p>
+              </div>
             ) : (
               recentOrders.map((order) => {
                 const s = statusConfig[order.status];
                 return (
                   <div
                     key={order.id}
-                    className="table-row flex items-center gap-3
-                      bg-dark-300 rounded-xl p-3
-                      hover:border-accent/20 border border-transparent
-                      transition-all duration-300"
+                    className="order-card grid grid-cols-1 sm:grid-cols-12
+                      gap-2 sm:gap-3 px-5 py-4
+                      hover:bg-dark-300 transition-all duration-300"
                   >
-                    {/* Avatar */}
+                    {/* Customer */}
+                    <div className="sm:col-span-4 flex items-center gap-3">
+                      <div
+                        className="w-8 h-8 rounded-full bg-accent/10
+                        border border-accent/20 flex items-center justify-center
+                        text-accent font-bold text-xs shrink-0"
+                      >
+                        {order.avatar}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-light font-semibold text-sm truncate">
+                          {order.customer}
+                        </p>
+                        <p className="text-primary-600 text-[10px] font-mono">
+                          {order.id}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Product */}
                     <div
-                      className="w-9 h-9 rounded-full bg-accent/10
-                      border border-accent/20 flex items-center justify-center
-                      text-accent font-bold text-sm shrink-0"
+                      className="sm:col-span-4 flex items-center
+                      sm:pl-0 pl-11"
                     >
-                      {order.avatar}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-light font-semibold text-sm truncate">
-                        {order.customer}
-                      </p>
-                      <p className="text-primary-500 text-xs truncate">
+                      <p className="text-primary-400 text-xs truncate">
                         {order.products[0]}
-                        {order.products.length > 1 &&
-                          ` +${order.products.length - 1}`}
+                        {order.products.length > 1 && (
+                          <span className="text-accent ml-1">
+                            +{order.products.length - 1}
+                          </span>
+                        )}
                       </p>
                     </div>
 
-                    {/* Amount */}
-                    <p className="text-light font-bold text-sm shrink-0">
-                      ${order.total.toLocaleString()}
-                    </p>
+                    {/* Amount + Status - Mobile together */}
+                    <div
+                      className="sm:col-span-2 flex sm:block
+                      items-center justify-between pl-11 sm:pl-0"
+                    >
+                      <p className="text-light font-bold text-sm">
+                        ${order.total.toLocaleString()}
+                      </p>
+                      <p className="text-primary-600 text-[10px] sm:mt-0.5">
+                        {new Date(order.date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
 
                     {/* Status */}
-                    <span
-                      className={`text-[10px] font-bold px-2.5 py-1
-                      rounded-full border shrink-0 ${s.class}`}
+                    <div
+                      className="sm:col-span-2 flex sm:justify-end
+                      items-center pl-11 sm:pl-0"
                     >
-                      {s.label}
-                    </span>
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-1
+                        rounded-full border whitespace-nowrap ${s.class}`}
+                      >
+                        {s.label}
+                      </span>
+                    </div>
                   </div>
                 );
               })
@@ -430,10 +486,9 @@ const AdminDashboard = () => {
               lowStockProducts.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center gap-3
-                    bg-dark-300 rounded-xl p-3
-                    border border-transparent hover:border-red-500/20
-                    transition-all duration-300"
+                  className="flex items-center gap-3 bg-dark-300
+                    rounded-xl p-3 border border-transparent
+                    hover:border-red-500/20 transition-all duration-300"
                 >
                   <img
                     src={p.image}

@@ -9,7 +9,7 @@ import {
   Grid3x3,
   LayoutGrid,
 } from "lucide-react";
-import { products } from "../data/products";
+import useAdminStore from "../store/adminStore";
 import ProductCard from "../components/ui/ProductCard";
 
 const isMobile = window.innerWidth < 1024;
@@ -28,6 +28,7 @@ const Products = () => {
 
   const headerRef = useRef(null);
   const drawerRef = useRef(null);
+  const products = useAdminStore((state) => state.products);
 
   const brands = ["all", ...new Set(products.map((p) => p.brand))];
 

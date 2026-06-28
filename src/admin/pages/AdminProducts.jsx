@@ -12,7 +12,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
-import { products as initialProducts } from "../../data/products";
+import useAdminStore from "../../store/adminStore";
 
 const statusConfig = {
   instock: {
@@ -46,10 +46,16 @@ const emptyForm = {
   description: "",
   image: "",
   isNew: false,
+  isFeatured: false,
 };
 
 const AdminProducts = () => {
-  const [products, setProducts] = useState(initialProducts);
+  // ✅ Use store instead of local state
+  const products = useAdminStore((state) => state.products);
+  const addProduct = useAdminStore((state) => state.addProduct);
+  const updateProduct = useAdminStore((state) => state.updateProduct);
+  const deleteProduct = useAdminStore((state) => state.deleteProduct);
+
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
@@ -60,18 +66,13 @@ const AdminProducts = () => {
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     gsap.fromTo(
       ".product-row",
       { y: 20, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.4,
-        stagger: 0.05,
-        ease: "power2.out",
-      },
+      { y: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: "power2.out" },
     );
   }, [products, search, categoryFilter, stockFilter]);
 
@@ -135,6 +136,7 @@ const AdminProducts = () => {
       description: product.description || "",
       image: product.image || "",
       isNew: product.isNew || false,
+      isFeatured: product.isFeatured || false,
     });
     setShowModal(true);
   };
@@ -143,37 +145,16 @@ const AdminProducts = () => {
     if (!form.name || !form.brand || !form.price || !form.stock) return;
 
     if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingProduct.id
-            ? {
-                ...p,
-                ...form,
-                price: Number(form.price),
-                oldPrice: form.oldPrice ? Number(form.oldPrice) : null,
-                stock: Number(form.stock),
-                discount: Number(form.discount) || 0,
-              }
-            : p,
-        ),
-      );
+      updateProduct(editingProduct.id, form);
     } else {
-      const newProduct = {
-        ...form,
-        id: `prod-${Date.now()}`,
-        price: Number(form.price),
-        oldPrice: form.oldPrice ? Number(form.oldPrice) : null,
-        stock: Number(form.stock),
-        discount: Number(form.discount) || 0,
-        rating: 4.5,
-        reviews: 0,
-        colors: ["#000000"],
-        images: [form.image],
-        specs: {},
-      };
-      setProducts((prev) => [newProduct, ...prev]);
+      addProduct(form);
     }
-    setShowModal(false);
+
+    setSaveSuccess(true);
+    setTimeout(() => {
+      setSaveSuccess(false);
+      setShowModal(false);
+    }, 1000);
   };
 
   const handleDelete = (id) => {
@@ -183,7 +164,7 @@ const AdminProducts = () => {
       duration: 0.3,
       ease: "power2.in",
       onComplete: () => {
-        setProducts((prev) => prev.filter((p) => p.id !== id));
+        deleteProduct(id);
         setDeleteConfirm(null);
       },
     });
@@ -215,12 +196,10 @@ const AdminProducts = () => {
         </div>
 
         <div className="flex gap-2">
-          {/* Filter Toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2.5
-              rounded-xl border text-sm font-semibold
-              transition-all duration-300
+              rounded-xl border text-sm font-semibold transition-all duration-300
               ${
                 showFilters
                   ? "bg-accent text-dark border-accent"
@@ -231,7 +210,6 @@ const AdminProducts = () => {
             Filters
           </button>
 
-          {/* Add Product */}
           <button
             onClick={openAdd}
             className="flex items-center gap-2 px-4 py-2.5
@@ -252,12 +230,11 @@ const AdminProducts = () => {
           className="flex flex-wrap gap-3 bg-dark-200
           border border-dark-400 rounded-xl p-4"
         >
-          {/* Category */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-primary-500 text-xs font-semibold uppercase tracking-wider">
               Category:
             </span>
-            {["all", "mobile", "laptop"].map((c) => (
+            {["all", "mobile", "pc"].map((c) => (
               <button
                 key={c}
                 onClick={() => setCategoryFilter(c)}
@@ -269,17 +246,12 @@ const AdminProducts = () => {
                       : "bg-dark-300 text-primary-400 hover:text-light border border-dark-400"
                   }`}
               >
-                {c === "all"
-                  ? "All"
-                  : c === "mobile"
-                    ? "📱 Mobile"
-                    : "💻 Laptop"}
+                {c === "all" ? "All" : c === "mobile" ? "📱 Mobile" : "💻 PC"}
               </button>
             ))}
           </div>
 
-          {/* Stock */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-primary-500 text-xs font-semibold uppercase tracking-wider">
               Stock:
             </span>
@@ -310,11 +282,7 @@ const AdminProducts = () => {
       {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          {
-            label: "Total",
-            value: products.length,
-            color: "text-light",
-          },
+          { label: "Total", value: products.length, color: "text-light" },
           {
             label: "In Stock",
             value: products.filter((p) => getStockStatus(p.stock) === "instock")
@@ -414,17 +382,28 @@ const AdminProducts = () => {
                   id={`product-row-${product.id}`}
                   className="product-row grid grid-cols-2 sm:grid-cols-12
                     gap-3 sm:gap-4 px-4 sm:px-5 py-4
-                    hover:bg-dark-300 transition-all duration-300
-                    items-center"
+                    hover:bg-dark-300 transition-all duration-300 items-center"
                 >
                   {/* Product Info */}
                   <div className="col-span-2 sm:col-span-4 flex items-center gap-3">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-12 h-12 rounded-xl object-cover
-                      border border-dark-400 shrink-0"
-                    />
+                    {product.image ? (
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-12 h-12 rounded-xl object-cover
+                        border border-dark-400 shrink-0"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="w-12 h-12 rounded-xl bg-dark-300
+                        border border-dark-400 shrink-0 flex items-center justify-center"
+                      >
+                        <Package size={20} className="text-primary-600" />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="text-light font-semibold text-sm truncate">
                         {product.name}
@@ -432,24 +411,33 @@ const AdminProducts = () => {
                       <p className="text-primary-500 text-xs mt-0.5">
                         {product.brand}
                       </p>
-                      {product.isNew && (
-                        <span
-                          className="inline-block bg-accent/10 text-accent
-                          text-[9px] font-bold px-1.5 py-0.5 rounded-full
-                          border border-accent/20 mt-1"
-                        >
-                          NEW
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        {product.isNew && (
+                          <span
+                            className="inline-block bg-accent/10 text-accent
+                            text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                            border border-accent/20"
+                          >
+                            NEW
+                          </span>
+                        )}
+                        {product.isFeatured && (
+                          <span
+                            className="inline-block bg-blue-500/10 text-blue-400
+                            text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                            border border-blue-500/20"
+                          >
+                            FEATURED
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Category */}
                   <div className="hidden sm:block sm:col-span-2">
                     <span className="text-primary-400 text-sm capitalize">
-                      {product.category === "mobile"
-                        ? "📱 Mobile"
-                        : "💻 Laptop"}
+                      {product.category === "mobile" ? "📱 Mobile" : "💻 PC"}
                     </span>
                   </div>
 
@@ -542,7 +530,7 @@ const AdminProducts = () => {
         )}
       </div>
 
-      {/* Delete Confirm Modal */}
+      {/* Delete Modal */}
       {deleteConfirm && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm
@@ -555,14 +543,13 @@ const AdminProducts = () => {
             <div className="text-center">
               <div
                 className="w-12 h-12 rounded-full bg-red-500/10
-                border border-red-500/20 flex items-center justify-center
-                mx-auto mb-3"
+                border border-red-500/20 flex items-center justify-center mx-auto mb-3"
               >
                 <Trash2 size={20} className="text-red-400" />
               </div>
               <h3 className="text-light font-bold text-lg">Delete Product</h3>
               <p className="text-primary-500 text-sm mt-1">
-                Are you sure? This action cannot be undone.
+                This will remove the product from your store permanently.
               </p>
             </div>
             <div className="flex gap-3">
@@ -570,8 +557,7 @@ const AdminProducts = () => {
                 onClick={() => setDeleteConfirm(null)}
                 className="flex-1 py-3 rounded-xl border border-dark-400
                   text-primary-400 font-semibold text-sm
-                  hover:text-light hover:border-accent/40
-                  transition-all duration-300"
+                  hover:text-light hover:border-accent/40 transition-all duration-300"
               >
                 Cancel
               </button>
@@ -588,7 +574,7 @@ const AdminProducts = () => {
         </div>
       )}
 
-      {/* Add/Edit Modal */}
+      {/* Add / Edit Modal */}
       {showModal && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm
@@ -599,10 +585,10 @@ const AdminProducts = () => {
             rounded-2xl p-6 w-full max-w-lg
             max-h-[90vh] overflow-y-auto space-y-4"
           >
-            {/* Modal Header */}
+            {/* Header */}
             <div className="flex items-center justify-between">
               <h3 className="text-light font-bold text-lg">
-                {editingProduct ? "Edit Product" : "Add Product"}
+                {editingProduct ? "Edit Product" : "Add New Product"}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -667,7 +653,7 @@ const AdminProducts = () => {
                       transition-all duration-300"
                   >
                     <option value="mobile">📱 Mobile</option>
-                    <option value="laptop">💻 Laptop</option>
+                    <option value="pc">💻 PC / Laptop</option>
                   </select>
                 </div>
               </div>
@@ -763,6 +749,17 @@ const AdminProducts = () => {
                     placeholder:text-primary-600 focus:outline-none
                     focus:border-accent/50 transition-all duration-300"
                 />
+                {/* Image Preview */}
+                {form.image && (
+                  <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden border border-dark-400">
+                    <img
+                      src={form.image}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => (e.target.style.display = "none")}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -780,27 +777,47 @@ const AdminProducts = () => {
                   className="w-full bg-dark-300 border border-dark-400
                     rounded-xl px-4 py-2.5 text-light text-sm
                     placeholder:text-primary-600 focus:outline-none
-                    focus:border-accent/50 transition-all duration-300
-                    resize-none"
+                    focus:border-accent/50 transition-all duration-300 resize-none"
                 />
               </div>
 
-              {/* Is New */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setForm({ ...form, isNew: !form.isNew })}
-                  className={`w-10 h-6 rounded-full transition-all duration-300
-                    flex items-center px-0.5
-                    ${form.isNew ? "bg-accent" : "bg-dark-400"}`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-dark transition-all duration-300
-                      ${form.isNew ? "translate-x-4" : "translate-x-0"}`}
-                  />
-                </button>
-                <span className="text-primary-400 text-sm">
-                  Mark as New Product
-                </span>
+              {/* Toggles */}
+              <div className="flex items-center gap-4">
+                {/* Is New */}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, isNew: !form.isNew })}
+                    className={`w-10 h-6 rounded-full transition-all duration-300
+                      flex items-center px-0.5
+                      ${form.isNew ? "bg-accent" : "bg-dark-400"}`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-dark transition-all duration-300
+                        ${form.isNew ? "translate-x-4" : "translate-x-0"}`}
+                    />
+                  </button>
+                  <span className="text-primary-400 text-xs">New</span>
+                </div>
+
+                {/* Is Featured */}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm({ ...form, isFeatured: !form.isFeatured })
+                    }
+                    className={`w-10 h-6 rounded-full transition-all duration-300
+                      flex items-center px-0.5
+                      ${form.isFeatured ? "bg-accent" : "bg-dark-400"}`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-dark transition-all duration-300
+                        ${form.isFeatured ? "translate-x-4" : "translate-x-0"}`}
+                    />
+                  </button>
+                  <span className="text-primary-400 text-xs">Featured</span>
+                </div>
               </div>
             </div>
 
@@ -810,8 +827,7 @@ const AdminProducts = () => {
                 onClick={() => setShowModal(false)}
                 className="flex-1 py-3 rounded-xl border border-dark-400
                   text-primary-400 font-semibold text-sm
-                  hover:text-light hover:border-accent/40
-                  transition-all duration-300"
+                  hover:text-light hover:border-accent/40 transition-all duration-300"
               >
                 Cancel
               </button>
@@ -820,15 +836,25 @@ const AdminProducts = () => {
                 disabled={
                   !form.name || !form.brand || !form.price || !form.stock
                 }
-                className="flex-1 py-3 rounded-xl bg-accent text-dark
-                  font-bold text-sm hover:bg-light
-                  transition-all duration-300 hover:shadow-lg
-                  hover:shadow-accent/20 flex items-center
-                  justify-center gap-2 disabled:opacity-50
-                  disabled:cursor-not-allowed"
+                className={`flex-1 py-3 rounded-xl font-bold text-sm
+                  transition-all duration-300 flex items-center justify-center gap-2
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  ${
+                    saveSuccess
+                      ? "bg-green-500 text-white"
+                      : "bg-accent text-dark hover:bg-light hover:shadow-lg hover:shadow-accent/20"
+                  }`}
               >
-                <Check size={16} />
-                {editingProduct ? "Save Changes" : "Add Product"}
+                {saveSuccess ? (
+                  <>
+                    <Check size={16} /> Saved!
+                  </>
+                ) : (
+                  <>
+                    <Check size={16} />
+                    {editingProduct ? "Save Changes" : "Add Product"}
+                  </>
+                )}
               </button>
             </div>
           </div>

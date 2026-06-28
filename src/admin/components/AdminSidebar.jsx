@@ -1,6 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { gsap } from "gsap";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -39,75 +38,67 @@ const AdminSidebar = ({ isOpen, onClose }) => {
   const { admin, logout } = useAdminAuthStore();
   const navigate = useNavigate();
   const sidebarRef = useRef(null);
+  const [mounted, setMounted] = useState(false);
 
+  // Only animate on first desktop mount, NOT on mobile
   useEffect(() => {
-    if (sidebarRef.current) {
-      gsap.fromTo(
-        sidebarRef.current,
-        { x: -20, opacity: 0 },
-        { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
-      );
+    if (!mounted) {
+      setMounted(true);
     }
   }, []);
 
-  // Close sidebar when clicking outside on mobile
+  // Lock body scroll when sidebar is open on mobile
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (
-        isOpen &&
-        sidebarRef.current &&
-        !sidebarRef.current.contains(e.target) &&
-        window.innerWidth < 1024
-      ) {
-        onClose();
-      }
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
     };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   const handleLogout = () => {
-    gsap.to(sidebarRef.current, {
-      x: -20,
-      opacity: 0,
-      duration: 0.3,
-      ease: "power2.in",
-      onComplete: () => {
-        logout();
-        navigate("/admin/login");
-      },
-    });
+    logout();
+    navigate("/admin/login");
   };
 
-  const handleCloseClick = (e) => {
-    e.stopPropagation();
-    onClose();
+  const handleNavClick = () => {
+    // Only close on mobile
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
   };
 
   return (
     <>
-      {/* Mobile Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          onClick={handleCloseClick}
-        />
-      )}
+      {/* ✅ Mobile Overlay - sits behind sidebar */}
+      <div
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm
+          z-40 lg:hidden transition-all duration-300
+          ${
+            isOpen
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none"
+          }`}
+        onClick={onClose}
+      />
 
-      {/* Sidebar */}
+      {/* ✅ Sidebar - controlled ONLY by CSS transition, no GSAP */}
       <aside
         ref={sidebarRef}
         className={`fixed top-0 left-0 h-full w-64 bg-dark-200
-          border-r border-dark-400 z-50 flex flex-col
+          border-r border-dark-400 flex flex-col
           transition-transform duration-300 ease-in-out
+          z-50
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0`}
       >
-        {/* Logo */}
+        {/* Logo + Close */}
         <div
           className="flex items-center justify-between
-          px-6 py-5 border-b border-dark-400"
+          px-6 py-5 border-b border-dark-400 shrink-0"
         >
           <div className="flex items-center gap-3">
             <div
@@ -126,14 +117,20 @@ const AdminSidebar = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Close - Mobile */}
+          {/* ✅ Close Button - Mobile Only */}
           <button
             type="button"
-            onClick={handleCloseClick}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
             className="lg:hidden w-8 h-8 rounded-lg bg-dark-300
               border border-dark-400 flex items-center justify-center
-              text-primary-400 hover:text-light transition-colors
-              active:scale-95 touch-manipulation"
+              text-primary-400 hover:text-light hover:bg-dark-200
+              transition-all duration-200 active:scale-90
+              touch-manipulation cursor-pointer"
+            aria-label="Close sidebar"
           >
             <X size={16} />
           </button>
@@ -145,7 +142,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
             <NavLink
               key={item.to}
               to={item.to}
-              onClick={handleCloseClick}
+              onClick={handleNavClick}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-xl
                 text-sm font-semibold transition-all duration-300
@@ -163,7 +160,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
         </nav>
 
         {/* Admin Profile + Logout */}
-        <div className="px-3 py-4 border-t border-dark-400 space-y-3">
+        <div className="px-3 py-4 border-t border-dark-400 space-y-3 shrink-0">
           {/* Profile */}
           <div
             className="flex items-center gap-3 px-4 py-3

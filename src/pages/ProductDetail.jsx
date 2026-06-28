@@ -16,7 +16,7 @@ import {
   Plus,
   Share2,
 } from "lucide-react";
-import { getById, products } from "../data/products";
+import useAdminStore from "../store/adminStore";
 import ProductCard from "../components/ui/ProductCard";
 import useCartStore from "../store/cartStore";
 import useWishlistStore from "../store/wishlistStore";
@@ -25,7 +25,15 @@ gsap.registerPlugin(ScrollTrigger);
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const product = getById(id);
+
+  // ✅ Get products from store
+  const products = useAdminStore((state) => state.products);
+  const product = products.find((p) => p.id === Number(id));
+
+  // ✅ related declared ONCE only here
+  const related = products
+    .filter((p) => p.category === product?.category && p.id !== product?.id)
+    .slice(0, 4);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState(0);
@@ -33,7 +41,6 @@ const ProductDetail = () => {
   const [activeTab, setActiveTab] = useState("specs");
   const [addedToCart, setAddedToCart] = useState(false);
 
-  // Zustand stores
   const addToCart = useCartStore((state) => state.addItem);
   const cartItems = useCartStore((state) => state.items);
   const addToWishlist = useWishlistStore((state) => state.addItem);
@@ -42,7 +49,6 @@ const ProductDetail = () => {
     state.isInWishlist(product?.id),
   );
 
-  // Check if current product with selected color is in cart
   const isInCart = product
     ? cartItems.some(
         (item) =>
@@ -55,9 +61,7 @@ const ProductDetail = () => {
   const infoRef = useRef(null);
   const pageRef = useRef(null);
 
-  const related = products
-    .filter((p) => p.category === product?.category && p.id !== product?.id)
-    .slice(0, 4);
+  // ❌ REMOVED duplicate related declaration that was here
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -91,14 +95,12 @@ const ProductDetail = () => {
     if (!isInCart && product) {
       addToCart(product, quantity, product.colors?.[selectedColor]);
     }
-
     setAddedToCart(true);
     gsap.fromTo(
       ".cart-btn",
       { scale: 0.95 },
       { scale: 1, duration: 0.4, ease: "back.out(2)" },
     );
-
     setTimeout(() => setAddedToCart(false), 2500);
   };
 
@@ -206,10 +208,7 @@ const ProductDetail = () => {
               />
 
               {/* Badges */}
-              <div
-                className="absolute top-3 sm:top-4 left-3 sm:left-4
-                flex flex-col gap-1.5"
-              >
+              <div className="absolute top-3 sm:top-4 left-3 sm:left-4 flex flex-col gap-1.5">
                 {product.isNew && (
                   <span
                     className="bg-accent text-dark text-[9px] sm:text-[10px]
@@ -230,10 +229,7 @@ const ProductDetail = () => {
               </div>
 
               {/* Share + Wishlist */}
-              <div
-                className="absolute top-3 sm:top-4 right-3 sm:right-4
-                flex flex-col gap-2"
-              >
+              <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex flex-col gap-2">
                 <button
                   onClick={handleWishlistToggle}
                   className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full
@@ -607,8 +603,7 @@ const ProductDetail = () => {
                   ].map((item, i) => (
                     <div
                       key={i}
-                      className="bg-dark-300 rounded-xl sm:rounded-2xl
-                      p-4 text-center"
+                      className="bg-dark-300 rounded-xl sm:rounded-2xl p-4 text-center"
                     >
                       <div className="text-2xl sm:text-3xl mb-2">
                         {item.icon}
@@ -680,12 +675,12 @@ const ProductDetail = () => {
           <div>
             <h2
               className="font-display font-bold text-xl sm:text-2xl
-      lg:text-3xl text-light mb-5 sm:mb-6"
+              lg:text-3xl text-light mb-5 sm:mb-6"
             >
               Related{" "}
               <span
                 className="text-transparent bg-clip-text bg-gradient-to-r
-        from-accent to-light"
+                from-accent to-light"
               >
                 Products
               </span>

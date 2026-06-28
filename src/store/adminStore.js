@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { products as initialProducts } from "../data/products";
 
 const mockOrders = [
   {
@@ -187,10 +188,59 @@ const monthlySales = [
 const useAdminStore = create(
   persist(
     (set, get) => ({
+      // ✅ Products now live in Zustand
+      products: initialProducts,
       orders: mockOrders,
       customers: mockCustomers,
       monthlySales,
 
+      // ── Product Actions ──
+      addProduct: (product) => {
+        const newProduct = {
+          ...product,
+          id: Date.now(),
+          rating: product.rating || 4.5,
+          reviews: product.reviews || 0,
+          images: product.image ? [product.image] : [],
+          colors: product.colors || ["#000000"],
+          specs: product.specs || {},
+          isFeatured: product.isFeatured || false,
+          isNew: product.isNew || false,
+          discount: Number(product.discount) || 0,
+          price: Number(product.price),
+          oldPrice: product.oldPrice ? Number(product.oldPrice) : null,
+          stock: Number(product.stock),
+        };
+        set((state) => ({
+          products: [newProduct, ...state.products],
+        }));
+      },
+
+      updateProduct: (id, updates) => {
+        set((state) => ({
+          products: state.products.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  ...updates,
+                  price: Number(updates.price),
+                  oldPrice: updates.oldPrice ? Number(updates.oldPrice) : null,
+                  stock: Number(updates.stock),
+                  discount: Number(updates.discount) || 0,
+                  images: updates.image ? [updates.image] : p.images,
+                }
+              : p,
+          ),
+        }));
+      },
+
+      deleteProduct: (id) => {
+        set((state) => ({
+          products: state.products.filter((p) => p.id !== id),
+        }));
+      },
+
+      // ── Order Actions ──
       updateOrderStatus: (orderId, status) => {
         set((state) => ({
           orders: state.orders.map((order) =>
@@ -205,8 +255,9 @@ const useAdminStore = create(
         }));
       },
 
+      // ── Stats ──
       getStats: () => {
-        const { orders, customers } = get();
+        const { orders, customers, products } = get();
         const totalRevenue = orders
           .filter((o) => o.status !== "cancelled")
           .reduce((sum, o) => sum + o.total, 0);
@@ -215,12 +266,16 @@ const useAdminStore = create(
         const pendingOrders = orders.filter(
           (o) => o.status === "pending",
         ).length;
+        const totalProducts = products.length;
+        const lowStock = products.filter((p) => p.stock <= 10).length;
 
         return {
           totalRevenue,
           totalOrders,
           totalCustomers,
           pendingOrders,
+          totalProducts,
+          lowStock,
         };
       },
     }),
