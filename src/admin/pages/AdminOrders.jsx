@@ -10,8 +10,9 @@ import {
   Trash2,
   Eye,
   Check,
+  Loader,
 } from "lucide-react";
-import useAdminStore from "../../store/adminStore";
+import { useOrders } from "../../hooks/useOrders";
 
 const statusConfig = {
   delivered: {
@@ -33,9 +34,7 @@ const statusConfig = {
 };
 
 const AdminOrders = () => {
-  const orders = useAdminStore((state) => state.orders);
-  const updateOrderStatus = useAdminStore((state) => state.updateOrderStatus);
-  const deleteOrder = useAdminStore((state) => state.deleteOrder);
+  const { orders, loading, updateOrderStatus, deleteOrder } = useOrders();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -44,29 +43,33 @@ const AdminOrders = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [deletingOrder, setDeletingOrder] = useState(false);
 
   useEffect(() => {
-    gsap.fromTo(
-      ".order-row",
-      { y: 20, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.4,
-        stagger: 0.05,
-        ease: "power2.out",
-      },
-    );
-  }, [orders, search, statusFilter]);
+    if (!loading) {
+      gsap.fromTo(
+        ".order-row",
+        { y: 20, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.4,
+          stagger: 0.05,
+          ease: "power2.out",
+        },
+      );
+    }
+  }, [loading, orders]);
 
-  // Filter + Sort
   const filtered = orders
     .filter((o) => {
       const matchSearch =
         o.customer.toLowerCase().includes(search.toLowerCase()) ||
         o.id.toLowerCase().includes(search.toLowerCase()) ||
         o.email.toLowerCase().includes(search.toLowerCase());
-      const matchStatus = statusFilter === "all" || o.status === statusFilter;
+      const matchStatus =
+        statusFilter === "all" || o.status === statusFilter;
       return matchSearch && matchStatus;
     })
     .sort((a, b) => {
@@ -102,33 +105,24 @@ const AdminOrders = () => {
     );
   };
 
-  const handleDelete = (id) => {
-    gsap.to(`#order-row-${id}`, {
-      x: -30,
-      opacity: 0,
-      duration: 0.3,
-      ease: "power2.in",
-      onComplete: () => {
-        deleteOrder(id);
-        setDeleteConfirm(null);
-      },
-    });
-  };
-
-  const handleStatusChange = (orderId, newStatus) => {
-    updateOrderStatus(orderId, newStatus);
+  const handleStatusChange = async (orderId, newStatus) => {
+    setUpdatingStatus(true);
+    await updateOrderStatus(orderId, newStatus);
     if (selectedOrder?.id === orderId) {
       setSelectedOrder((prev) => ({ ...prev, status: newStatus }));
     }
+    setUpdatingStatus(false);
   };
 
-  // Stats
+  const handleDelete = async (id) => {
+    setDeletingOrder(true);
+    await deleteOrder(id);
+    setDeleteConfirm(null);
+    setDeletingOrder(false);
+  };
+
   const stats = [
-    {
-      label: "Total",
-      value: orders.length,
-      color: "text-light",
-    },
+    { label: "Total", value: orders.length, color: "text-light" },
     {
       label: "Pending",
       value: orders.filter((o) => o.status === "pending").length,
@@ -146,11 +140,21 @@ const AdminOrders = () => {
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="flex flex-col items-center gap-3">
+          <Loader size={32} className="text-accent animate-spin" />
+          <p className="text-primary-500 text-sm">Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {/* Top Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search */}
         <div
           className="flex items-center gap-2 bg-dark-200
           border border-dark-400 rounded-xl px-4 py-2.5 flex-1"
@@ -171,12 +175,10 @@ const AdminOrders = () => {
           )}
         </div>
 
-        {/* Filter Toggle */}
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`flex items-center gap-2 px-4 py-2.5
-            rounded-xl border text-sm font-semibold
-            transition-all duration-300
+            rounded-xl border text-sm font-semibold transition-all duration-300
             ${
               showFilters
                 ? "bg-accent text-dark border-accent"
@@ -234,7 +236,7 @@ const AdminOrders = () => {
         className="bg-dark-200 border border-dark-400
         rounded-2xl overflow-hidden"
       >
-        {/* Table Header */}
+        {/* Header */}
         <div
           className="hidden sm:grid grid-cols-12 gap-4
           px-5 py-3 border-b border-dark-400
@@ -243,7 +245,7 @@ const AdminOrders = () => {
           <div className="col-span-1">
             <button
               onClick={() => handleSort("id")}
-              className="flex items-center gap-1 hover:text-light transition-colors"
+              className="flex items-center gap-1 hover:text-light"
             >
               ID <SortIcon field="id" />
             </button>
@@ -251,7 +253,7 @@ const AdminOrders = () => {
           <div className="col-span-3">
             <button
               onClick={() => handleSort("customer")}
-              className="flex items-center gap-1 hover:text-light transition-colors"
+              className="flex items-center gap-1 hover:text-light"
             >
               Customer <SortIcon field="customer" />
             </button>
@@ -260,7 +262,7 @@ const AdminOrders = () => {
           <div className="col-span-2">
             <button
               onClick={() => handleSort("total")}
-              className="flex items-center gap-1 hover:text-light transition-colors"
+              className="flex items-center gap-1 hover:text-light"
             >
               Total <SortIcon field="total" />
             </button>
@@ -268,7 +270,7 @@ const AdminOrders = () => {
           <div className="col-span-2">
             <button
               onClick={() => handleSort("date")}
-              className="flex items-center gap-1 hover:text-light transition-colors"
+              className="flex items-center gap-1 hover:text-light"
             >
               Date <SortIcon field="date" />
             </button>
@@ -276,7 +278,7 @@ const AdminOrders = () => {
           <div className="col-span-1 text-right">Actions</div>
         </div>
 
-        {/* Table Body */}
+        {/* Body */}
         <div className="divide-y divide-dark-400">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
@@ -292,7 +294,6 @@ const AdminOrders = () => {
               return (
                 <div
                   key={order.id}
-                  id={`order-row-${order.id}`}
                   className="order-row grid grid-cols-2 sm:grid-cols-12
                     gap-3 sm:gap-4 px-4 sm:px-5 py-4
                     hover:bg-dark-300 transition-all duration-300 items-center"
@@ -356,7 +357,6 @@ const AdminOrders = () => {
                     className="col-span-1 sm:col-span-1 flex items-center
                     justify-end gap-1.5"
                   >
-                    {/* Mobile Info */}
                     <div className="sm:hidden flex-1">
                       <p className="text-light font-bold text-sm">
                         ${order.total.toLocaleString()}
@@ -375,7 +375,6 @@ const AdminOrders = () => {
                         border border-dark-400 flex items-center justify-center
                         text-primary-400 hover:text-accent hover:border-accent/40
                         transition-all duration-300 hover:scale-110"
-                      title="View Order"
                     >
                       <Eye size={13} />
                     </button>
@@ -385,7 +384,6 @@ const AdminOrders = () => {
                         border border-dark-400 flex items-center justify-center
                         text-primary-400 hover:text-red-400 hover:border-red-400/40
                         transition-all duration-300 hover:scale-110"
-                      title="Delete Order"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -396,17 +394,11 @@ const AdminOrders = () => {
           )}
         </div>
 
-        {/* Footer */}
         {filtered.length > 0 && (
-          <div
-            className="px-5 py-3 border-t border-dark-400
-            flex items-center justify-between"
-          >
+          <div className="px-5 py-3 border-t border-dark-400">
             <p className="text-primary-500 text-xs">
               Showing{" "}
-              <span className="text-light font-semibold">
-                {filtered.length}
-              </span>{" "}
+              <span className="text-light font-semibold">{filtered.length}</span>{" "}
               of{" "}
               <span className="text-light font-semibold">{orders.length}</span>{" "}
               orders
@@ -426,7 +418,6 @@ const AdminOrders = () => {
             rounded-2xl p-6 w-full max-w-md space-y-5
             max-h-[90vh] overflow-y-auto"
           >
-            {/* Header */}
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-light font-bold text-lg">Order Details</h3>
@@ -444,11 +435,8 @@ const AdminOrders = () => {
               </button>
             </div>
 
-            {/* Customer Info */}
-            <div
-              className="bg-dark-300 rounded-xl p-4
-              border border-dark-400 space-y-2"
-            >
+            {/* Customer */}
+            <div className="bg-dark-300 rounded-xl p-4 border border-dark-400 space-y-2">
               <p className="text-primary-500 text-xs font-semibold uppercase tracking-wider">
                 Customer
               </p>
@@ -467,44 +455,75 @@ const AdminOrders = () => {
                   <p className="text-primary-500 text-xs">
                     {selectedOrder.email}
                   </p>
+                  {selectedOrder.phone && (
+                    <p className="text-primary-500 text-xs">
+                      {selectedOrder.phone}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
 
+            {/* Shipping */}
+            {selectedOrder.address && (
+              <div className="bg-dark-300 rounded-xl p-4 border border-dark-400 space-y-2">
+                <p className="text-primary-500 text-xs font-semibold uppercase tracking-wider">
+                  Shipping Address
+                </p>
+                <p className="text-light text-sm">{selectedOrder.address}</p>
+                <p className="text-accent text-xs capitalize">
+                  {selectedOrder.shippingMethod} shipping
+                </p>
+              </div>
+            )}
+
             {/* Products */}
-            <div
-              className="bg-dark-300 rounded-xl p-4
-              border border-dark-400 space-y-2"
-            >
+            <div className="bg-dark-300 rounded-xl p-4 border border-dark-400 space-y-2">
               <p className="text-primary-500 text-xs font-semibold uppercase tracking-wider">
                 Products
               </p>
-              <div className="space-y-1.5">
-                {selectedOrder.products.map((product, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Check size={12} className="text-accent shrink-0" />
-                    <p className="text-light text-sm">{product}</p>
+              <div className="space-y-2">
+                {(selectedOrder.productDetails?.length > 0
+                  ? selectedOrder.productDetails
+                  : selectedOrder.products.map((name) => ({ name }))
+                ).map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    {item.image && (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-10 h-10 rounded-lg object-cover border border-dark-400 shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-light text-sm font-semibold truncate">
+                        {item.name}
+                      </p>
+                      {item.quantity && (
+                        <p className="text-primary-500 text-xs">
+                          Qty: {item.quantity} ×{" "}
+                          ${item.price?.toLocaleString()}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Order Info */}
-            <div
-              className="bg-dark-300 rounded-xl p-4
-              border border-dark-400 space-y-3"
-            >
+            <div className="bg-dark-300 rounded-xl p-4 border border-dark-400 space-y-3">
               <p className="text-primary-500 text-xs font-semibold uppercase tracking-wider">
                 Order Info
               </p>
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between">
                   <span className="text-primary-400 text-sm">Total</span>
                   <span className="text-light font-bold text-sm">
                     ${selectedOrder.total.toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between">
                   <span className="text-primary-400 text-sm">Date</span>
                   <span className="text-light text-sm">
                     {new Date(selectedOrder.date).toLocaleDateString("en-US", {
@@ -514,12 +533,19 @@ const AdminOrders = () => {
                     })}
                   </span>
                 </div>
+                {selectedOrder.paymentLast4 && (
+                  <div className="flex justify-between">
+                    <span className="text-primary-400 text-sm">Payment</span>
+                    <span className="text-light text-sm">
+                      •••• {selectedOrder.paymentLast4}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="text-primary-400 text-sm">Status</span>
                   <span
                     className={`text-xs font-bold px-2.5 py-1
-                    rounded-full border
-                    ${statusConfig[selectedOrder.status].class}`}
+                    rounded-full border ${statusConfig[selectedOrder.status].class}`}
                   >
                     {statusConfig[selectedOrder.status].label}
                   </span>
@@ -537,16 +563,23 @@ const AdminOrders = () => {
                   <button
                     key={s}
                     onClick={() => handleStatusChange(selectedOrder.id, s)}
+                    disabled={updatingStatus}
                     className={`py-2.5 rounded-xl text-xs font-bold
                       capitalize border transition-all duration-300
+                      flex items-center justify-center gap-1
+                      disabled:opacity-50
                       ${
                         selectedOrder.status === s
                           ? `${statusConfig[s].class} scale-[1.02]`
                           : "bg-dark-300 border-dark-400 text-primary-400 hover:text-light"
                       }`}
                   >
-                    {s === selectedOrder.status && (
-                      <Check size={10} className="inline mr-1" />
+                    {updatingStatus && selectedOrder.status !== s ? (
+                      <Loader size={10} className="animate-spin" />
+                    ) : (
+                      selectedOrder.status === s && (
+                        <Check size={10} />
+                      )
                     )}
                     {s}
                   </button>
@@ -554,12 +587,10 @@ const AdminOrders = () => {
               </div>
             </div>
 
-            {/* Close */}
             <button
               onClick={() => setSelectedOrder(null)}
               className="w-full py-3 rounded-xl bg-accent text-dark
-                font-bold text-sm hover:bg-light
-                transition-all duration-300"
+                font-bold text-sm hover:bg-light transition-all duration-300"
             >
               Close
             </button>
@@ -580,33 +611,38 @@ const AdminOrders = () => {
             <div className="text-center">
               <div
                 className="w-12 h-12 rounded-full bg-red-500/10
-                border border-red-500/20 flex items-center justify-center
-                mx-auto mb-3"
+                border border-red-500/20 flex items-center justify-center mx-auto mb-3"
               >
                 <Trash2 size={20} className="text-red-400" />
               </div>
               <h3 className="text-light font-bold text-lg">Delete Order</h3>
               <p className="text-primary-500 text-sm mt-1">
-                Are you sure? This action cannot be undone.
+                This will permanently delete this order from the database.
               </p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
+                disabled={deletingOrder}
                 className="flex-1 py-3 rounded-xl border border-dark-400
                   text-primary-400 font-semibold text-sm
-                  hover:text-light hover:border-accent/40
-                  transition-all duration-300"
+                  hover:text-light transition-all duration-300"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
+                disabled={deletingOrder}
                 className="flex-1 py-3 rounded-xl bg-red-500/10
                   border border-red-500/30 text-red-400 font-bold text-sm
-                  hover:bg-red-500/20 transition-all duration-300"
+                  hover:bg-red-500/20 transition-all duration-300
+                  flex items-center justify-center gap-2"
               >
-                Delete
+                {deletingOrder ? (
+                  <Loader size={14} className="animate-spin" />
+                ) : (
+                  "Delete"
+                )}
               </button>
             </div>
           </div>

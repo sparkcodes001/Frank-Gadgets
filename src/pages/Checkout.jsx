@@ -13,7 +13,7 @@ import {
   Package,
 } from "lucide-react";
 import useCartStore from "../store/cartStore";
-
+import { useOrders } from "../hooks/useOrders";
 // ─── Step Indicator ───────────────────────────────────────────────────────────
 const StepIndicator = ({ currentStep }) => {
   const steps = [
@@ -38,11 +38,7 @@ const StepIndicator = ({ currentStep }) => {
                       : "bg-dark-300 border border-dark-400 text-primary-500"
                 }`}
             >
-              {currentStep > step.id ? (
-                <CheckCircle size={16} />
-              ) : (
-                step.id
-              )}
+              {currentStep > step.id ? <CheckCircle size={16} /> : step.id}
             </div>
             <span
               className={`text-[10px] sm:text-xs font-medium tracking-wide
@@ -52,7 +48,6 @@ const StepIndicator = ({ currentStep }) => {
             </span>
           </div>
 
-          {/* Connector */}
           {index < steps.length - 1 && (
             <div
               className={`w-16 sm:w-24 h-[2px] mx-2 mb-4 rounded-full
@@ -117,7 +112,6 @@ const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
       className="bg-dark-200 border border-dark-400 rounded-2xl sm:rounded-3xl
       p-5 sm:p-6 space-y-4 lg:sticky lg:top-24"
     >
-      {/* Toggle on mobile */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between lg:cursor-default"
@@ -130,7 +124,6 @@ const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
         </span>
       </button>
 
-      {/* Items list */}
       <div className={`space-y-3 ${!isExpanded ? "hidden lg:block" : ""}`}>
         {cartItems.map((item) => (
           <div
@@ -197,7 +190,6 @@ const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
           </span>
         </div>
 
-        {/* Trust badges */}
         <div className="border-t border-dark-400 pt-3 space-y-2">
           {[
             { icon: Shield, text: "256-bit SSL Encryption" },
@@ -302,7 +294,6 @@ const ShippingStep = ({ data, onChange, errors }) => (
       />
     </div>
 
-    {/* Shipping method */}
     <div className="space-y-3">
       <label className="text-primary-400 text-xs font-semibold uppercase tracking-widest">
         Shipping Method <span className="text-accent">*</span>
@@ -393,7 +384,6 @@ const PaymentStep = ({ data, onChange, errors }) => {
         </p>
       </div>
 
-      {/* Card preview */}
       <div
         className="relative h-44 sm:h-48 rounded-2xl overflow-hidden
         bg-gradient-to-br from-dark-300 via-dark-200 to-dark-300
@@ -402,10 +392,7 @@ const PaymentStep = ({ data, onChange, errors }) => {
         <div className="flex items-center justify-between">
           <div className="flex gap-1">
             {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="w-1.5 h-1.5 rounded-full bg-accent/60"
-              />
+              <div key={i} className="w-1.5 h-1.5 rounded-full bg-accent/60" />
             ))}
           </div>
           <CreditCard size={28} className="text-accent/70" />
@@ -439,7 +426,6 @@ const PaymentStep = ({ data, onChange, errors }) => {
           </div>
         </div>
 
-        {/* Shimmer effect */}
         <div
           className="absolute inset-0 bg-gradient-to-r from-transparent
           via-white/5 to-transparent -skew-x-12 pointer-events-none"
@@ -505,15 +491,14 @@ const PaymentStep = ({ data, onChange, errors }) => {
         </span>
       </label>
 
-      {/* Security note */}
       <div
         className="flex items-center gap-3 p-4 bg-dark-300 border
         border-dark-400 rounded-xl"
       >
         <Lock size={16} className="text-accent shrink-0" />
         <p className="text-primary-400 text-xs leading-relaxed">
-          Your payment information is encrypted with 256-bit SSL. We never
-          store your full card details.
+          Your payment information is encrypted with 256-bit SSL. We never store
+          your full card details.
         </p>
       </div>
     </div>
@@ -532,11 +517,7 @@ const ReviewStep = ({ shipping, payment, cartItems, subtotal, total }) => (
       </p>
     </div>
 
-    {/* Shipping summary */}
-    <div
-      className="bg-dark-300 border border-dark-400 rounded-2xl p-4
-      space-y-3"
-    >
+    <div className="bg-dark-300 border border-dark-400 rounded-2xl p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-light font-semibold text-sm flex items-center gap-2">
           <Truck size={15} className="text-accent" />
@@ -559,7 +540,6 @@ const ReviewStep = ({ shipping, payment, cartItems, subtotal, total }) => (
       </div>
     </div>
 
-    {/* Payment summary */}
     <div className="bg-dark-300 border border-dark-400 rounded-2xl p-4 space-y-3">
       <h4 className="text-light font-semibold text-sm flex items-center gap-2">
         <CreditCard size={15} className="text-accent" />
@@ -574,15 +554,13 @@ const ReviewStep = ({ shipping, payment, cartItems, subtotal, total }) => (
         </div>
         <div>
           <p className="text-light text-sm font-medium">
-            •••• •••• ••••{" "}
-            {payment.cardNumber.replace(/\s/g, "").slice(-4)}
+            •••• •••• •••• {payment.cardNumber.replace(/\s/g, "").slice(-4)}
           </p>
           <p className="text-primary-500 text-xs">{payment.cardName}</p>
         </div>
       </div>
     </div>
 
-    {/* Items */}
     <div className="bg-dark-300 border border-dark-400 rounded-2xl p-4 space-y-3">
       <h4 className="text-light font-semibold text-sm flex items-center gap-2">
         <Package size={15} className="text-accent" />
@@ -653,8 +631,11 @@ const SuccessScreen = ({ orderNumber }) => {
       <p className="text-primary-400 text-sm sm:text-base mb-2">
         Thank you for your purchase 🎉
       </p>
+      <p className="text-primary-600 text-xs mb-2">
+        Order <span className="text-accent font-bold">#{orderNumber}</span>
+      </p>
       <p className="text-primary-600 text-xs mb-8">
-        Order #{orderNumber} · Confirmation sent to your email
+        Confirmation sent to your email
       </p>
       <div className="flex flex-col sm:flex-row gap-3">
         <Link
@@ -676,23 +657,25 @@ const SuccessScreen = ({ orderNumber }) => {
   );
 };
 
-// ─── Main Checkout Component ──────────────────────────────────────────────────
+// ─── Main Checkout ────────────────────────────────────────────────────────────
 const Checkout = () => {
   const navigate = useNavigate();
   const cartItems = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clearCart);
 
+  // ✅ Get addOrder from admin store
+  const { addOrder } = useOrders();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderNumber] = useState(
-    () => `BT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+    () => `ORD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
   );
   const [isProcessing, setIsProcessing] = useState(false);
 
   const formRef = useRef(null);
   const pageRef = useRef(null);
 
-  // Redirect if cart is empty
   useEffect(() => {
     if (cartItems.length === 0 && !isSuccess) navigate("/cart");
     window.scrollTo(0, 0);
@@ -706,7 +689,6 @@ const Checkout = () => {
     );
   }, []);
 
-  // Animate step transitions
   useEffect(() => {
     if (formRef.current) {
       gsap.fromTo(
@@ -717,7 +699,6 @@ const Checkout = () => {
     }
   }, [currentStep]);
 
-  // ── Form State ──
   const [shippingData, setShippingData] = useState({
     firstName: "",
     lastName: "",
@@ -740,7 +721,6 @@ const Checkout = () => {
 
   const [errors, setErrors] = useState({});
 
-  // ── Calculations ──
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -749,7 +729,6 @@ const Checkout = () => {
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
 
-  // ── Validation ──
   const validateShipping = () => {
     const e = {};
     if (!shippingData.firstName.trim()) e.firstName = "First name is required";
@@ -769,7 +748,8 @@ const Checkout = () => {
   const validatePayment = () => {
     const e = {};
     if (!paymentData.cardName.trim()) e.cardName = "Name on card is required";
-    if (!paymentData.cardNumber.trim()) e.cardNumber = "Card number is required";
+    if (!paymentData.cardNumber.trim())
+      e.cardNumber = "Card number is required";
     else if (paymentData.cardNumber.replace(/\s/g, "").length < 16)
       e.cardNumber = "Invalid card number";
     if (!paymentData.expiry.trim()) e.expiry = "Expiry date is required";
@@ -781,7 +761,6 @@ const Checkout = () => {
     return Object.keys(e).length === 0;
   };
 
-  // ── Navigation ──
   const handleNext = () => {
     setErrors({});
     if (currentStep === 1 && !validateShipping()) return;
@@ -796,10 +775,23 @@ const Checkout = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // ✅ Updated handlePlaceOrder
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
-    // Simulate API call
+
+    // Simulate payment processing
     await new Promise((res) => setTimeout(res, 2000));
+
+    // ✅ Send order to admin store
+    addOrder({
+      shippingData,
+      paymentData,
+      cartItems,
+      total,
+      orderNumber,
+    });
+
+    // Clear cart
     clearCart();
     setIsSuccess(true);
     setIsProcessing(false);
@@ -813,7 +805,6 @@ const Checkout = () => {
           <SuccessScreen orderNumber={orderNumber} />
         ) : (
           <>
-            {/* Back to Cart */}
             <Link
               to="/cart"
               className="inline-flex items-center gap-2 text-primary-400
@@ -826,7 +817,6 @@ const Checkout = () => {
             <StepIndicator currentStep={currentStep} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-              {/* Form */}
               <div className="lg:col-span-2">
                 <div
                   ref={formRef}
@@ -861,7 +851,6 @@ const Checkout = () => {
                     />
                   )}
 
-                  {/* Navigation Buttons */}
                   <div className="flex items-center justify-between mt-8 pt-6 border-t border-dark-400">
                     {currentStep > 1 ? (
                       <button
@@ -923,7 +912,6 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/* Sidebar */}
               <div className="lg:col-span-1">
                 <OrderSummary
                   cartItems={cartItems}

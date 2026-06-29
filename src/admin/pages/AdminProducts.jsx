@@ -11,8 +11,9 @@ import {
   Package,
   ChevronUp,
   ChevronDown,
+  Loader,
 } from "lucide-react";
-import useAdminStore from "../../store/adminStore";
+import { useProducts } from "../../hooks/useProducts";
 
 const statusConfig = {
   instock: {
@@ -50,11 +51,8 @@ const emptyForm = {
 };
 
 const AdminProducts = () => {
-  // ✅ Use store instead of local state
-  const products = useAdminStore((state) => state.products);
-  const addProduct = useAdminStore((state) => state.addProduct);
-  const updateProduct = useAdminStore((state) => state.updateProduct);
-  const deleteProduct = useAdminStore((state) => state.deleteProduct);
+  const { products, loading, addProduct, updateProduct, deleteProduct } =
+    useProducts();
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -66,17 +64,26 @@ const AdminProducts = () => {
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
-    gsap.fromTo(
-      ".product-row",
-      { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: "power2.out" },
-    );
-  }, [products, search, categoryFilter, stockFilter]);
+    if (!loading) {
+      gsap.fromTo(
+        ".product-row",
+        { y: 20, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.4,
+          stagger: 0.05,
+          ease: "power2.out",
+        },
+      );
+    }
+  }, [loading, products]);
 
-  // Filter + Sort
   const filtered = products
     .filter((p) => {
       const matchSearch =
@@ -141,40 +148,51 @@ const AdminProducts = () => {
     setShowModal(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || !form.brand || !form.price || !form.stock) return;
+    setSaving(true);
 
+    let result;
     if (editingProduct) {
-      updateProduct(editingProduct.id, form);
+      result = await updateProduct(editingProduct.id, form);
     } else {
-      addProduct(form);
+      result = await addProduct(form);
     }
 
-    setSaveSuccess(true);
-    setTimeout(() => {
-      setSaveSuccess(false);
-      setShowModal(false);
-    }, 1000);
+    if (result.success) {
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setSaveSuccess(false);
+        setShowModal(false);
+      }, 1000);
+    }
+    setSaving(false);
   };
 
-  const handleDelete = (id) => {
-    gsap.to(`#product-row-${id}`, {
-      x: -30,
-      opacity: 0,
-      duration: 0.3,
-      ease: "power2.in",
-      onComplete: () => {
-        deleteProduct(id);
-        setDeleteConfirm(null);
-      },
-    });
+  const handleDelete = async (id) => {
+    setDeleting(true);
+    const result = await deleteProduct(id);
+    if (result.success) {
+      setDeleteConfirm(null);
+    }
+    setDeleting(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="flex flex-col items-center gap-3">
+          <Loader size={32} className="text-accent animate-spin" />
+          <p className="text-primary-500 text-sm">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
       {/* Top Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search */}
         <div
           className="flex items-center gap-2 bg-dark-200
           border border-dark-400 rounded-xl px-4 py-2.5 flex-1"
@@ -279,7 +297,7 @@ const AdminProducts = () => {
         </div>
       )}
 
-      {/* Stats Row */}
+      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total", value: products.length, color: "text-light" },
@@ -375,7 +393,6 @@ const AdminProducts = () => {
             filtered.map((product) => {
               const stockStatus = getStockStatus(product.stock);
               const s = statusConfig[stockStatus];
-
               return (
                 <div
                   key={product.id}
@@ -392,9 +409,7 @@ const AdminProducts = () => {
                         alt={product.name}
                         className="w-12 h-12 rounded-xl object-cover
                         border border-dark-400 shrink-0"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                        }}
+                        onError={(e) => (e.target.style.display = "none")}
                       />
                     ) : (
                       <div
@@ -471,7 +486,6 @@ const AdminProducts = () => {
                     className="col-span-2 sm:col-span-2 flex items-center
                     justify-end gap-2"
                   >
-                    {/* Mobile Price + Stock */}
                     <div className="sm:hidden flex-1">
                       <p className="text-light font-bold text-sm">
                         ${product.price.toLocaleString()}
@@ -483,7 +497,6 @@ const AdminProducts = () => {
                         {s.label}
                       </span>
                     </div>
-
                     <button
                       onClick={() => openEdit(product)}
                       className="w-8 h-8 rounded-lg bg-dark-300
@@ -509,12 +522,8 @@ const AdminProducts = () => {
           )}
         </div>
 
-        {/* Footer */}
         {filtered.length > 0 && (
-          <div
-            className="px-5 py-3 border-t border-dark-400
-            flex items-center justify-between"
-          >
+          <div className="px-5 py-3 border-t border-dark-400">
             <p className="text-primary-500 text-xs">
               Showing{" "}
               <span className="text-light font-semibold">
@@ -549,12 +558,14 @@ const AdminProducts = () => {
               </div>
               <h3 className="text-light font-bold text-lg">Delete Product</h3>
               <p className="text-primary-500 text-sm mt-1">
-                This will remove the product from your store permanently.
+                This will permanently remove the product from your store and
+                database.
               </p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
                 className="flex-1 py-3 rounded-xl border border-dark-400
                   text-primary-400 font-semibold text-sm
                   hover:text-light hover:border-accent/40 transition-all duration-300"
@@ -563,18 +574,24 @@ const AdminProducts = () => {
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
+                disabled={deleting}
                 className="flex-1 py-3 rounded-xl bg-red-500/10
                   border border-red-500/30 text-red-400 font-bold text-sm
-                  hover:bg-red-500/20 transition-all duration-300"
+                  hover:bg-red-500/20 transition-all duration-300
+                  flex items-center justify-center gap-2"
               >
-                Delete
+                {deleting ? (
+                  <Loader size={14} className="animate-spin" />
+                ) : (
+                  "Delete"
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add / Edit Modal */}
+      {/* Add/Edit Modal */}
       {showModal && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm
@@ -585,7 +602,6 @@ const AdminProducts = () => {
             rounded-2xl p-6 w-full max-w-lg
             max-h-[90vh] overflow-y-auto space-y-4"
           >
-            {/* Header */}
             <div className="flex items-center justify-between">
               <h3 className="text-light font-bold text-lg">
                 {editingProduct ? "Edit Product" : "Add New Product"}
@@ -600,7 +616,6 @@ const AdminProducts = () => {
               </button>
             </div>
 
-            {/* Form */}
             <div className="space-y-3">
               {/* Name */}
               <div>
@@ -749,7 +764,6 @@ const AdminProducts = () => {
                     placeholder:text-primary-600 focus:outline-none
                     focus:border-accent/50 transition-all duration-300"
                 />
-                {/* Image Preview */}
                 {form.image && (
                   <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden border border-dark-400">
                     <img
@@ -782,42 +796,37 @@ const AdminProducts = () => {
               </div>
 
               {/* Toggles */}
-              <div className="flex items-center gap-4">
-                {/* Is New */}
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, isNew: !form.isNew })}
-                    className={`w-10 h-6 rounded-full transition-all duration-300
-                      flex items-center px-0.5
-                      ${form.isNew ? "bg-accent" : "bg-dark-400"}`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full bg-dark transition-all duration-300
-                        ${form.isNew ? "translate-x-4" : "translate-x-0"}`}
-                    />
-                  </button>
-                  <span className="text-primary-400 text-xs">New</span>
-                </div>
-
-                {/* Is Featured */}
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setForm({ ...form, isFeatured: !form.isFeatured })
-                    }
-                    className={`w-10 h-6 rounded-full transition-all duration-300
-                      flex items-center px-0.5
-                      ${form.isFeatured ? "bg-accent" : "bg-dark-400"}`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full bg-dark transition-all duration-300
-                        ${form.isFeatured ? "translate-x-4" : "translate-x-0"}`}
-                    />
-                  </button>
-                  <span className="text-primary-400 text-xs">Featured</span>
-                </div>
+              <div className="flex items-center gap-6">
+                {[
+                  {
+                    key: "isNew",
+                    label: "New Product",
+                  },
+                  {
+                    key: "isFeatured",
+                    label: "Featured",
+                  },
+                ].map((toggle) => (
+                  <div key={toggle.key} className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm({ ...form, [toggle.key]: !form[toggle.key] })
+                      }
+                      className={`w-10 h-6 rounded-full transition-all duration-300
+                        flex items-center px-0.5
+                        ${form[toggle.key] ? "bg-accent" : "bg-dark-400"}`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full bg-dark transition-all duration-300
+                          ${form[toggle.key] ? "translate-x-4" : "translate-x-0"}`}
+                      />
+                    </button>
+                    <span className="text-primary-400 text-xs">
+                      {toggle.label}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -825,6 +834,7 @@ const AdminProducts = () => {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setShowModal(false)}
+                disabled={saving}
                 className="flex-1 py-3 rounded-xl border border-dark-400
                   text-primary-400 font-semibold text-sm
                   hover:text-light hover:border-accent/40 transition-all duration-300"
@@ -834,7 +844,11 @@ const AdminProducts = () => {
               <button
                 onClick={handleSave}
                 disabled={
-                  !form.name || !form.brand || !form.price || !form.stock
+                  saving ||
+                  !form.name ||
+                  !form.brand ||
+                  !form.price ||
+                  !form.stock
                 }
                 className={`flex-1 py-3 rounded-xl font-bold text-sm
                   transition-all duration-300 flex items-center justify-center gap-2
@@ -842,10 +856,12 @@ const AdminProducts = () => {
                   ${
                     saveSuccess
                       ? "bg-green-500 text-white"
-                      : "bg-accent text-dark hover:bg-light hover:shadow-lg hover:shadow-accent/20"
+                      : "bg-accent text-dark hover:bg-light"
                   }`}
               >
-                {saveSuccess ? (
+                {saving ? (
+                  <Loader size={16} className="animate-spin" />
+                ) : saveSuccess ? (
                   <>
                     <Check size={16} /> Saved!
                   </>

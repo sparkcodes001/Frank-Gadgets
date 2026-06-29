@@ -188,11 +188,83 @@ const monthlySales = [
 const useAdminStore = create(
   persist(
     (set, get) => ({
-      // ✅ Products now live in Zustand
       products: initialProducts,
       orders: mockOrders,
       customers: mockCustomers,
       monthlySales,
+
+      // ✅ Add real order from checkout
+      addOrder: (orderData) => {
+        const { shippingData, paymentData, cartItems, total, orderNumber } =
+          orderData;
+
+        const fullName = `${shippingData.firstName} ${shippingData.lastName}`;
+        const avatar = shippingData.firstName.charAt(0).toUpperCase();
+
+        // Build new order
+        const newOrder = {
+          id: orderNumber,
+          customer: fullName,
+          email: shippingData.email,
+          phone: shippingData.phone,
+          address: `${shippingData.address}, ${shippingData.city}, ${shippingData.state} ${shippingData.zip}`,
+          products: cartItems.map((item) => item.name),
+          productDetails: cartItems.map((item) => ({
+            id: item.id,
+            name: item.name,
+            image: item.image,
+            price: item.price,
+            quantity: item.quantity,
+            color: item.color,
+          })),
+          total,
+          status: "pending",
+          date: new Date().toISOString().split("T")[0],
+          avatar,
+          shippingMethod: shippingData.shippingMethod,
+          paymentLast4: paymentData.cardNumber.replace(/\s/g, "").slice(-4),
+          paymentName: paymentData.cardName,
+        };
+
+        // Check if customer already exists
+        const existingCustomer = get().customers.find(
+          (c) => c.email === shippingData.email,
+        );
+
+        if (existingCustomer) {
+          // Update existing customer
+          set((state) => ({
+            orders: [newOrder, ...state.orders],
+            customers: state.customers.map((c) =>
+              c.email === shippingData.email
+                ? {
+                    ...c,
+                    orders: c.orders + 1,
+                    totalSpent: c.totalSpent + total,
+                  }
+                : c,
+            ),
+          }));
+        } else {
+          // Create new customer
+          const newCustomer = {
+            id: `CUS-${Date.now()}`,
+            name: fullName,
+            email: shippingData.email,
+            phone: shippingData.phone,
+            orders: 1,
+            totalSpent: total,
+            status: "active",
+            joined: new Date().toISOString().split("T")[0],
+            avatar,
+          };
+
+          set((state) => ({
+            orders: [newOrder, ...state.orders],
+            customers: [newCustomer, ...state.customers],
+          }));
+        }
+      },
 
       // ── Product Actions ──
       addProduct: (product) => {

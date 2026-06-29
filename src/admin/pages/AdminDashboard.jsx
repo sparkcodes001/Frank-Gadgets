@@ -9,6 +9,7 @@ import {
   ArrowUp,
   ArrowDown,
   Clock,
+  Package,
 } from "lucide-react";
 import {
   AreaChart,
@@ -21,8 +22,9 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import useAdminStore from "../../store/adminStore";
-import { products } from "../../data/products";
+import { useProducts } from "../../hooks/useProducts";
+import { useOrders } from "../../hooks/useOrders";
+import { useCustomers } from "../../hooks/useCustomers";
 
 const statusConfig = {
   delivered: {
@@ -46,10 +48,7 @@ const statusConfig = {
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div
-        className="bg-dark-200 border border-dark-400
-        rounded-xl px-4 py-3 shadow-xl"
-      >
+      <div className="bg-dark-200 border border-dark-400 rounded-xl px-4 py-3 shadow-xl">
         <p className="text-primary-400 text-xs mb-1">{label}</p>
         {payload.map((entry, i) => (
           <p key={i} className="text-light font-bold text-sm">
@@ -64,54 +63,68 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-const AdminDashboard = () => {
-  const orders = useAdminStore((state) => state.orders);
-  const monthlySales = useAdminStore((state) => state.monthlySales);
-  const getStats = useAdminStore((state) => state.getStats);
+const monthlySales = [
+  { month: "Aug", revenue: 12400, orders: 45 },
+  { month: "Sep", revenue: 18600, orders: 62 },
+  { month: "Oct", revenue: 15200, orders: 53 },
+  { month: "Nov", revenue: 24800, orders: 87 },
+  { month: "Dec", revenue: 32500, orders: 112 },
+  { month: "Jan", revenue: 28900, orders: 95 },
+];
 
-  const stats = getStats();
+const AdminDashboard = () => {
+  const { products, loading: productsLoading } = useProducts();
+  const { orders, loading: ordersLoading } = useOrders();
+  const { customers, loading: customersLoading } = useCustomers();
+
   const recentOrders = orders.slice(0, 5);
   const lowStockProducts = products.filter((p) => p.stock <= 10);
 
-  const statsRef = useRef(null);
-  const chartsRef = useRef(null);
+  const totalRevenue = orders
+    .filter((o) => o.status !== "cancelled")
+    .reduce((sum, o) => sum + o.total, 0);
+  const pendingOrders = orders.filter((o) => o.status === "pending").length;
+
+  const isLoading = productsLoading || ordersLoading || customersLoading;
 
   useEffect(() => {
-    gsap.fromTo(
-      ".stat-card",
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: "power3.out" },
-    );
-    gsap.fromTo(
-      ".chart-card",
-      { y: 40, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.6,
-        stagger: 0.15,
-        ease: "power3.out",
-        delay: 0.4,
-      },
-    );
-    gsap.fromTo(
-      ".order-card",
-      { x: -20, opacity: 0 },
-      {
-        x: 0,
-        opacity: 1,
-        duration: 0.4,
-        stagger: 0.08,
-        ease: "power2.out",
-        delay: 0.6,
-      },
-    );
-  }, []);
+    if (!isLoading) {
+      gsap.fromTo(
+        ".stat-card",
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: "power3.out" },
+      );
+      gsap.fromTo(
+        ".chart-card",
+        { y: 40, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          stagger: 0.15,
+          ease: "power3.out",
+          delay: 0.4,
+        },
+      );
+      gsap.fromTo(
+        ".order-card",
+        { x: -20, opacity: 0 },
+        {
+          x: 0,
+          opacity: 1,
+          duration: 0.4,
+          stagger: 0.08,
+          ease: "power2.out",
+          delay: 0.6,
+        },
+      );
+    }
+  }, [isLoading]);
 
   const statCards = [
     {
       title: "Total Revenue",
-      value: `$${stats.totalRevenue.toLocaleString(undefined, {
+      value: `$${totalRevenue.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}`,
@@ -122,7 +135,7 @@ const AdminDashboard = () => {
     },
     {
       title: "Total Orders",
-      value: stats.totalOrders,
+      value: orders.length,
       icon: <ShoppingCart size={20} />,
       change: "+8.2%",
       up: true,
@@ -130,7 +143,7 @@ const AdminDashboard = () => {
     },
     {
       title: "Total Customers",
-      value: stats.totalCustomers,
+      value: customers.length,
       icon: <Users size={20} />,
       change: "+5.1%",
       up: true,
@@ -138,7 +151,7 @@ const AdminDashboard = () => {
     },
     {
       title: "Pending Orders",
-      value: stats.pendingOrders,
+      value: pendingOrders,
       icon: <Clock size={20} />,
       change: "-2.4%",
       up: false,
@@ -173,13 +186,37 @@ const AdminDashboard = () => {
     },
   };
 
+  // ── Loading Skeleton ──
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-dark-200 border border-dark-400
+              rounded-2xl p-5 animate-pulse h-32"
+            />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div
+            className="lg:col-span-2 bg-dark-200 border border-dark-400
+            rounded-2xl p-5 animate-pulse h-72"
+          />
+          <div
+            className="bg-dark-200 border border-dark-400
+            rounded-2xl p-5 animate-pulse h-72"
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Stat Cards */}
-      <div
-        ref={statsRef}
-        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {statCards.map((stat, i) => {
           const c = colorMap[stat.color];
           return (
@@ -216,7 +253,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Charts Row */}
-      <div ref={chartsRef} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Revenue Chart */}
         <div
           className="chart-card lg:col-span-2 bg-dark-200
@@ -316,12 +353,11 @@ const AdminDashboard = () => {
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* ✅ Recent Orders - Fully Redesigned */}
+        {/* Recent Orders */}
         <div
           className="lg:col-span-2 bg-dark-200 border border-dark-400
           rounded-2xl overflow-hidden"
         >
-          {/* Header */}
           <div
             className="flex items-center justify-between
             px-5 py-4 border-b border-dark-400"
@@ -335,8 +371,7 @@ const AdminDashboard = () => {
             <Link
               to="/admin/orders"
               className="flex items-center gap-1.5 text-accent
-                text-xs font-semibold hover:gap-3
-                transition-all duration-300 group"
+                text-xs font-semibold group transition-all duration-300"
             >
               View All
               <ArrowRight
@@ -351,29 +386,18 @@ const AdminDashboard = () => {
             className="hidden sm:grid grid-cols-12 gap-3
             px-5 py-2.5 border-b border-dark-400"
           >
-            <div className="col-span-4">
-              <p className="text-primary-600 text-[10px] font-semibold uppercase tracking-wider">
-                Customer
-              </p>
-            </div>
-            <div className="col-span-4">
-              <p className="text-primary-600 text-[10px] font-semibold uppercase tracking-wider">
-                Product
-              </p>
-            </div>
-            <div className="col-span-2">
-              <p className="text-primary-600 text-[10px] font-semibold uppercase tracking-wider">
-                Amount
-              </p>
-            </div>
-            <div className="col-span-2 text-right">
-              <p className="text-primary-600 text-[10px] font-semibold uppercase tracking-wider">
-                Status
-              </p>
-            </div>
+            {["Customer", "Product", "Amount", "Status"].map((h, i) => (
+              <div
+                key={h}
+                className={`${i === 0 ? "col-span-4" : i === 1 ? "col-span-4" : i === 2 ? "col-span-2" : "col-span-2 text-right"}`}
+              >
+                <p className="text-primary-600 text-[10px] font-semibold uppercase tracking-wider">
+                  {h}
+                </p>
+              </div>
+            ))}
           </div>
 
-          {/* Orders List */}
           <div className="divide-y divide-dark-400">
             {recentOrders.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
@@ -410,10 +434,7 @@ const AdminDashboard = () => {
                     </div>
 
                     {/* Product */}
-                    <div
-                      className="sm:col-span-4 flex items-center
-                      sm:pl-0 pl-11"
-                    >
+                    <div className="sm:col-span-4 flex items-center sm:pl-0 pl-11">
                       <p className="text-primary-400 text-xs truncate">
                         {order.products[0]}
                         {order.products.length > 1 && (
@@ -424,7 +445,7 @@ const AdminDashboard = () => {
                       </p>
                     </div>
 
-                    {/* Amount + Status - Mobile together */}
+                    {/* Amount */}
                     <div
                       className="sm:col-span-2 flex sm:block
                       items-center justify-between pl-11 sm:pl-0"

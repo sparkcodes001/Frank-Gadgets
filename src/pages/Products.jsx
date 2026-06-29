@@ -8,14 +8,16 @@ import {
   ChevronDown,
   Grid3x3,
   LayoutGrid,
+  Loader,
 } from "lucide-react";
-import useAdminStore from "../store/adminStore";
+import { useProducts } from "../hooks/useProducts";
 import ProductCard from "../components/ui/ProductCard";
 
-const isMobile = window.innerWidth < 1024;
+const isMobile = () => window.innerWidth < 1024;
 
 const Products = () => {
   const [searchParams] = useSearchParams();
+  const { products, loading } = useProducts(); // ✅ From Supabase
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(
     searchParams.get("category") || "all",
@@ -28,10 +30,10 @@ const Products = () => {
 
   const headerRef = useRef(null);
   const drawerRef = useRef(null);
-  const products = useAdminStore((state) => state.products);
 
   const brands = ["all", ...new Set(products.map((p) => p.brand))];
 
+  // ... rest stays the same
   const categories = [
     { value: "all", label: "All Products", icon: "🔥" },
     { value: "mobile", label: "Smartphones", icon: "📱" },
@@ -221,7 +223,17 @@ const Products = () => {
       </button>
     </div>
   );
-
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-dark pt-20 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader size={40} className="text-accent animate-spin" />
+          <p className="text-primary-500">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-dark pt-20 sm:pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
