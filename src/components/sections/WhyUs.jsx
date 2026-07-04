@@ -15,54 +15,62 @@ gsap.registerPlugin(ScrollTrigger);
 const WhyUs = () => {
   const sectionRef = useRef(null);
   const lineRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const perks = [
     {
       icon: <Zap size={22} />,
-      title: "Lightning Fast Delivery",
-      desc: "Get your order delivered within 24–48 hours anywhere in the country.",
-      stat: "48h",
+      title: "Same Day Delivery",
+      desc: "Order before 2PM and get your gadget delivered same day within Lagos.",
+      stat: "24h",
       statLabel: "Max Delivery",
     },
     {
       icon: <Shield size={22} />,
-      title: "2-Year Warranty",
-      desc: "Every product comes with a full manufacturer warranty. No compromises.",
-      stat: "2yr",
-      statLabel: "Warranty",
+      title: "Genuine Products",
+      desc: "Every gadget is 100% original, sourced directly from trusted distributors.",
+      stat: "100%",
+      statLabel: "Original",
     },
     {
       icon: <BadgeCheck size={22} />,
-      title: "100% Authentic",
-      desc: "All products are sourced directly from authorized distributors only.",
-      stat: "100%",
-      statLabel: "Genuine",
+      title: "Warranty Included",
+      desc: "All products come with manufacturer warranty. Buy with total confidence.",
+      stat: "1yr",
+      statLabel: "Warranty",
     },
     {
       icon: <HeadphonesIcon size={22} />,
       title: "24/7 Support",
-      desc: "Our team is always available to help you before and after purchase.",
+      desc: "Chat us on WhatsApp anytime. We're always ready to assist you.",
       stat: "24/7",
       statLabel: "Support",
     },
     {
       icon: <RefreshCw size={22} />,
-      title: "Easy Returns",
-      desc: "Changed your mind? Return within 30 days, no questions asked.",
-      stat: "30d",
-      statLabel: "Returns",
+      title: "We Buy & Swap",
+      desc: "Got an old phone? Bring it in — we buy, sell and swap gadgets daily.",
+      stat: "Swap",
+      statLabel: "Trade-In",
     },
     {
       icon: <Truck size={22} />,
-      title: "Free Shipping",
-      desc: "Free delivery on all orders above $100. No hidden charges ever.",
-      stat: "$100+",
+      title: "Free Delivery",
+      desc: "Enjoy free delivery on all orders above ₦50,000. No hidden charges.",
+      stat: "₦50k+",
       statLabel: "Free Ship",
     },
   ];
 
   useEffect(() => {
-    // Animate the top accent line
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    // Animate top accent line
     gsap.fromTo(
       lineRef.current,
       { scaleX: 0, transformOrigin: "left" },
@@ -129,15 +137,6 @@ const WhyUs = () => {
     );
   }, []);
 
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
   return (
     <section ref={sectionRef} className="relative bg-dark-200 overflow-hidden">
       {/* Top accent line */}
@@ -147,13 +146,13 @@ const WhyUs = () => {
         from-accent via-accent/50 to-transparent"
       />
 
-      {/* Background texture */}
+      {/* Background grid texture - updated to red */}
       <div
         className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(0,255,136,0.3) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,255,136,0.3) 1px, transparent 1px)
+            linear-gradient(rgba(230,57,70,0.3) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(230,57,70,0.3) 1px, transparent 1px)
           `,
           backgroundSize: "40px 40px",
         }}
@@ -176,7 +175,7 @@ const WhyUs = () => {
                 className="text-accent text-[11px] font-bold
                 uppercase tracking-[0.3em]"
               >
-                Why BreemTech
+                Why Frank Gadgets
               </span>
             </div>
             <h2
@@ -188,15 +187,18 @@ const WhyUs = () => {
                 className="text-transparent bg-clip-text"
                 style={{
                   backgroundImage:
-                    "linear-gradient(90deg, #00ff88 0%, #f0f0f0 100%)",
+                    "linear-gradient(90deg, #E63946 0%, #f0f0f0 100%)",
                 }}
               >
-                We Deliver Trust.
+                We Build Trust.
               </span>
             </h2>
-            <p className="whyus-header text-primary-400 text-sm sm:text-base max-w-md leading-relaxed">
-              From the moment you browse to long after your purchase — we've got
-              you covered at every step.
+            <p
+              className="whyus-header text-primary-400 text-sm sm:text-base 
+              max-w-md leading-relaxed"
+            >
+              From the moment you walk in or shop online — we buy, sell & swap
+              gadgets with honesty and care. Every time.
             </p>
           </div>
 
@@ -206,7 +208,7 @@ const WhyUs = () => {
             hidden sm:block"
           >
             <p className="font-display font-bold text-4xl lg:text-5xl text-light">
-              10k+
+              2k+
             </p>
             <p className="text-primary-500 text-xs uppercase tracking-widest mt-1">
               Happy Customers
@@ -217,51 +219,63 @@ const WhyUs = () => {
         {/* Perks Grid */}
         <div
           className="perks-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px
-  border border-white/5 bg-white/5"
+          border border-white/5 bg-white/5"
         >
-          {/* ✅ 3 on mobile, all 6 on desktop */}
           {perks.slice(0, isMobile ? 3 : 6).map((perk, i) => (
             <div
               key={i}
               className="perk-card group bg-dark-200 p-6 sm:p-8
-        hover:bg-dark-300 transition-all duration-500
-        relative overflow-hidden cursor-default"
+                hover:bg-dark-300 transition-all duration-500
+                relative overflow-hidden cursor-default"
             >
-              {/* everything inside stays exactly the same */}
+              {/* Top hover line */}
               <div
                 className="absolute top-0 left-0 right-0 h-px
-        bg-gradient-to-r from-accent to-transparent
-        scale-x-0 group-hover:scale-x-100
-        transition-transform duration-500 origin-left"
+                  bg-gradient-to-r from-accent to-transparent
+                  scale-x-0 group-hover:scale-x-100
+                  transition-transform duration-500 origin-left"
               />
+
+              {/* Corner accent */}
               <div
                 className="absolute bottom-0 right-0 w-16 h-16
-        bg-accent/5 group-hover:bg-accent/10
-        transition-all duration-500"
+                  bg-accent/5 group-hover:bg-accent/10
+                  transition-all duration-500"
                 style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
               />
+
+              {/* Icon */}
               <div
                 className="w-11 h-11 flex items-center justify-center
-        text-accent bg-accent/10 mb-5
-        group-hover:bg-accent group-hover:text-dark
-        transition-all duration-300"
+                text-accent bg-accent/10 mb-5 rounded-xl
+                group-hover:bg-accent group-hover:text-white
+                transition-all duration-300"
               >
                 {perk.icon}
               </div>
+
+              {/* Stat */}
               <div className="stat-number mb-3">
                 <span className="font-display font-bold text-2xl text-accent leading-none">
                   {perk.stat}
                 </span>
-                <span className="text-primary-600 text-[10px] uppercase tracking-widest ml-2">
+                <span
+                  className="text-primary-600 text-[10px] uppercase 
+                  tracking-widest ml-2"
+                >
                   {perk.statLabel}
                 </span>
               </div>
+
+              {/* Title */}
               <h3
                 className="font-semibold text-light text-base mb-2
-        group-hover:text-accent transition-colors duration-300"
+                group-hover:text-accent transition-colors duration-300"
               >
                 {perk.title}
               </h3>
+
+              {/* Desc */}
               <p className="text-primary-500 text-sm leading-relaxed">
                 {perk.desc}
               </p>
@@ -275,22 +289,28 @@ const WhyUs = () => {
           grid grid-cols-2 sm:grid-cols-4"
         >
           {[
-            { value: "500+", label: "Products" },
-            { value: "4.9★", label: "Avg Rating" },
-            { value: "10k+", label: "Orders Shipped" },
-            { value: "99%", label: "Satisfaction Rate" },
+            { value: "300+", label: "Products" },
+            { value: "4.8★", label: "Avg Rating" },
+            { value: "2k+", label: "Orders Shipped" },
+            { value: "99%", label: "Satisfaction" },
           ].map((s, i) => (
             <div
               key={i}
-              className={`bg-dark-200 px-6 py-4
-                flex items-center gap-4
+              className={`bg-dark-200 px-6 py-5 flex items-center gap-4
+                hover:bg-dark-300 transition-colors duration-300
                 ${i !== 3 ? "border-r border-white/5" : ""}`}
             >
               <div>
-                <p className="font-display font-bold text-xl sm:text-2xl text-accent">
+                <p
+                  className="font-display font-bold text-xl sm:text-2xl 
+                  text-accent"
+                >
                   {s.value}
                 </p>
-                <p className="text-primary-600 text-[10px] uppercase tracking-widest">
+                <p
+                  className="text-primary-600 text-[10px] uppercase 
+                  tracking-widest mt-0.5"
+                >
                   {s.label}
                 </p>
               </div>
@@ -300,7 +320,10 @@ const WhyUs = () => {
       </div>
 
       {/* Bottom accent line */}
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
+      <div
+        className="h-px w-full bg-gradient-to-r 
+        from-transparent via-accent/30 to-transparent"
+      />
     </section>
   );
 };

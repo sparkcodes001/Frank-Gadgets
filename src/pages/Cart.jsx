@@ -8,8 +8,21 @@ import {
   ShoppingBag,
   ArrowRight,
   Lock,
+  Smartphone,
+  Tablet,
+  Headphones,
+  Gamepad2,
 } from "lucide-react";
 import useCartStore from "../store/cartStore";
+import { formatPrice } from "../utils/formatPrice";
+
+// ✅ Category icon map (matches Frank Gadgets categories)
+const categoryIcons = {
+  phones: <Smartphone size={12} />,
+  tablets: <Tablet size={12} />,
+  accessories: <Headphones size={12} />,
+  gadgets: <Gamepad2 size={12} />,
+};
 
 const Cart = () => {
   const cartItems = useCartStore((state) => state.items);
@@ -18,8 +31,6 @@ const Cart = () => {
 
   const pageRef = useRef(null);
   const headerRef = useRef(null);
-
-  const discount = 0;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -68,7 +79,7 @@ const Cart = () => {
     });
   };
 
-  // Calculations
+  // ✅ Calculations - Real Naira, no fake tax
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -78,10 +89,7 @@ const Cart = () => {
       sum + ((item.oldPrice || item.price) - item.price) * item.quantity,
     0,
   );
-  const promoDiscount = subtotal * discount;
-  const shipping = subtotal > 100 ? 0 : 9.99;
-  const tax = (subtotal - promoDiscount) * 0.08;
-  const total = subtotal - promoDiscount + shipping + tax;
+  const total = subtotal;
 
   return (
     <div ref={pageRef} className="min-h-screen bg-dark pt-20 sm:pt-24 pb-16">
@@ -95,7 +103,7 @@ const Cart = () => {
             Shopping{" "}
             <span
               className="text-transparent bg-clip-text bg-gradient-to-r
-              from-accent to-light"
+              from-accent to-secondary-dim"
             >
               Cart
             </span>
@@ -125,8 +133,7 @@ const Cart = () => {
               className="text-primary-500 text-sm sm:text-base mb-8 text-center
               max-w-md"
             >
-              Looks like you haven't added anything to your cart yet. Start
-              shopping now!
+              Looks like you haven't added any gadgets yet. Start shopping now!
             </p>
             <Link
               to="/products"
@@ -140,164 +147,172 @@ const Cart = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* LEFT: Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item) => {
-                return (
-                  <div
-                    key={`${item.id}-${item.color}`}
-                    id={`cart-item-${item.id}-${item.color.replace("#", "")}`}
-                    className="cart-item bg-dark-200 border border-dark-400
-                      rounded-2xl sm:rounded-3xl overflow-hidden
-                      hover:border-accent/30 transition-all duration-300"
-                  >
-                    <div className="flex gap-3 sm:gap-4 p-3 sm:p-5">
-                      {/* Image */}
+              {cartItems.map((item) => (
+                <div
+                  key={`${item.id}-${item.color}`}
+                  id={`cart-item-${item.id}-${item.color.replace("#", "")}`}
+                  className="cart-item bg-dark-200 border border-dark-400
+                    rounded-2xl sm:rounded-3xl overflow-hidden
+                    hover:border-accent/30 transition-all duration-300"
+                >
+                  <div className="flex gap-3 sm:gap-4 p-3 sm:p-5">
+                    {/* Image */}
+                    <Link
+                      to={`/products/${item.id}`}
+                      className="shrink-0 w-20 h-20 sm:w-28 sm:h-28
+                        rounded-xl sm:rounded-2xl overflow-hidden
+                        bg-dark-300 border border-dark-400
+                        hover:border-accent/50 transition-all duration-300 group"
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover
+                          group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </Link>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-2 sm:gap-3">
+                      {/* Brand + Category */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span
+                          className="text-accent text-[10px] sm:text-xs
+                          font-bold uppercase tracking-widest"
+                        >
+                          {item.brand}
+                        </span>
+                        <span className="text-primary-500">
+                          {categoryIcons[item.category] || (
+                            <Smartphone size={12} />
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Name */}
                       <Link
                         to={`/products/${item.id}`}
-                        className="shrink-0 w-20 h-20 sm:w-28 sm:h-28
-                          rounded-xl sm:rounded-2xl overflow-hidden
-                          bg-dark-300 border border-dark-400
-                          hover:border-accent/50 transition-all duration-300 group"
+                        className="text-light font-semibold text-sm sm:text-base
+                          leading-snug hover:text-accent transition-colors line-clamp-2"
                       >
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-cover
-                            group-hover:scale-105 transition-transform duration-500"
-                        />
+                        {item.name}
                       </Link>
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0 flex flex-col gap-2 sm:gap-3">
-                        {/* Brand + Category */}
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className="text-accent text-[10px] sm:text-xs
-                            font-bold uppercase tracking-widest"
-                          >
-                            {item.brand}
-                          </span>
-                          <span className="text-primary-600 text-[10px] sm:text-xs">
-                            {item.category === "mobile" ? "📱" : "💻"}
-                          </span>
-                        </div>
+                      {/* Color */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-primary-500 text-[10px] sm:text-xs">
+                          Color:
+                        </span>
+                        <div
+                          className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-dark-400"
+                          style={{ backgroundColor: item.color }}
+                        />
+                      </div>
 
-                        {/* Name */}
-                        <Link
-                          to={`/products/${item.id}`}
-                          className="text-light font-semibold text-sm sm:text-base
-                            leading-snug hover:text-accent transition-colors line-clamp-2"
+                      {/* Bottom row */}
+                      <div className="flex items-end justify-between gap-2 mt-auto">
+                        {/* Quantity */}
+                        <div
+                          className="flex items-center bg-dark-300
+                          border border-dark-400 rounded-xl overflow-hidden"
                         >
-                          {item.name}
-                        </Link>
-
-                        {/* Color */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-primary-500 text-[10px] sm:text-xs">
-                            Color:
-                          </span>
-                          <div
-                            className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-dark-400"
-                            style={{ backgroundColor: item.color }}
-                          />
-                        </div>
-
-                        {/* Bottom row */}
-                        <div className="flex items-end justify-between gap-2 mt-auto">
-                          {/* Quantity */}
-                          <div
-                            className="flex items-center bg-dark-300
-                            border border-dark-400 rounded-xl overflow-hidden"
+                          <button
+                            onClick={() =>
+                              handleUpdateQuantity(
+                                item.id,
+                                item.color,
+                                item.quantity - 1,
+                              )
+                            }
+                            className="px-2.5 sm:px-3 py-1.5 sm:py-2
+                              text-primary-400 hover:text-accent hover:bg-dark-200
+                              transition-all duration-300 active:scale-95"
                           >
-                            <button
-                              onClick={() =>
-                                handleUpdateQuantity(
-                                  item.id,
-                                  item.color,
-                                  item.quantity - 1,
-                                )
-                              }
-                              className="px-2.5 sm:px-3 py-1.5 sm:py-2
-                                text-primary-400 hover:text-accent hover:bg-dark-200
-                                transition-all duration-300 active:scale-95"
-                            >
-                              <Minus size={14} />
-                            </button>
-                            <span
-                              className="px-3 sm:px-4 py-1.5 sm:py-2
-                              text-light font-bold text-xs sm:text-sm
-                              border-x border-dark-400 min-w-[36px] sm:min-w-[44px] text-center"
-                            >
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() =>
-                                handleUpdateQuantity(
-                                  item.id,
-                                  item.color,
-                                  item.quantity + 1,
-                                )
-                              }
-                              className="px-2.5 sm:px-3 py-1.5 sm:py-2
-                                text-primary-400 hover:text-accent hover:bg-dark-200
-                                transition-all duration-300 active:scale-95"
-                            >
-                              <Plus size={14} />
-                            </button>
-                          </div>
-
-                          {/* Price */}
-                          <div className="text-right">
-                            <p className="text-light font-bold text-sm sm:text-base leading-none">
-                              ${(item.price * item.quantity).toLocaleString()}
-                            </p>
-                            {item.oldPrice && (
-                              <p className="text-primary-600 text-[10px] sm:text-xs line-through mt-0.5">
-                                $
-                                {(
-                                  item.oldPrice * item.quantity
-                                ).toLocaleString()}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Actions - Desktop */}
-                          <div className="hidden sm:flex items-center gap-2">
-                            <button
-                              onClick={() =>
-                                handleRemoveItem(item.id, item.color)
-                              }
-                              className="w-9 h-9 rounded-xl bg-dark-300
-                                border border-dark-400 flex items-center justify-center
-                                text-primary-400 hover:text-red-400 hover:border-red-400/50
-                                transition-all duration-300 hover:scale-110 active:scale-95"
-                              title="Remove from Cart"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
+                            <Minus size={14} />
+                          </button>
+                          <span
+                            className="px-3 sm:px-4 py-1.5 sm:py-2
+                            text-light font-bold text-xs sm:text-sm
+                            border-x border-dark-400 min-w-[36px] sm:min-w-[44px] text-center"
+                          >
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleUpdateQuantity(
+                                item.id,
+                                item.color,
+                                item.quantity + 1,
+                              )
+                            }
+                            className="px-2.5 sm:px-3 py-1.5 sm:py-2
+                              text-primary-400 hover:text-accent hover:bg-dark-200
+                              transition-all duration-300 active:scale-95"
+                          >
+                            <Plus size={14} />
+                          </button>
                         </div>
 
-                        {/* Actions - Mobile */}
-                        <div className="flex sm:hidden items-center gap-2 pt-2 border-t border-dark-400">
+                        {/* ✅ Price in Naira */}
+                        <div className="text-right">
+                          <p className="text-light font-bold text-sm sm:text-base leading-none">
+                            {formatPrice(item.price * item.quantity)}
+                          </p>
+                          {item.oldPrice && (
+                            <p className="text-primary-600 text-[10px] sm:text-xs line-through mt-0.5">
+                              {formatPrice(item.oldPrice * item.quantity)}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Actions - Desktop */}
+                        <div className="hidden sm:flex items-center gap-2">
                           <button
                             onClick={() =>
                               handleRemoveItem(item.id, item.color)
                             }
-                            className="flex-1 flex items-center justify-center gap-2
-                              bg-dark-300 border border-dark-400 text-primary-400
-                              py-2 rounded-xl text-xs font-semibold
-                              hover:text-red-400 hover:border-red-400/50
-                              transition-all duration-300 active:scale-95"
+                            className="w-9 h-9 rounded-xl bg-dark-300
+                              border border-dark-400 flex items-center justify-center
+                              text-primary-400 hover:text-red-400 hover:border-red-400/50
+                              transition-all duration-300 hover:scale-110 active:scale-95"
+                            title="Remove from Cart"
                           >
-                            <Trash2 size={13} />
-                            Remove
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </div>
+
+                      {/* Actions - Mobile */}
+                      <div className="flex sm:hidden items-center gap-2 pt-2 border-t border-dark-400">
+                        <button
+                          onClick={() => handleRemoveItem(item.id, item.color)}
+                          className="flex-1 flex items-center justify-center gap-2
+                            bg-dark-300 border border-dark-400 text-primary-400
+                            py-2 rounded-xl text-xs font-semibold
+                            hover:text-red-400 hover:border-red-400/50
+                            transition-all duration-300 active:scale-95"
+                        >
+                          <Trash2 size={13} />
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* Swap badge if available */}
+                  {item.swappable && (
+                    <div className="px-3 sm:px-5 pb-3 sm:pb-4">
+                      <span
+                        className="inline-flex items-center gap-1.5
+                        text-secondary-dim text-[10px] font-medium
+                        bg-secondary/10 px-2.5 py-1 rounded-full"
+                      >
+                        🔄 Swap available for this item
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
 
             {/* RIGHT: Summary */}
@@ -315,30 +330,23 @@ const Cart = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-primary-400">Subtotal</span>
                     <span className="text-light font-semibold">
-                      ${subtotal.toFixed(2)}
+                      {formatPrice(subtotal)}
                     </span>
                   </div>
 
                   {savings > 0 && (
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-green-400">Product Savings</span>
-                      <span className="text-green-400 font-semibold">
-                        -${savings.toFixed(2)}
+                      <span className="text-accent">You're Saving</span>
+                      <span className="text-accent font-semibold">
+                        -{formatPrice(savings)}
                       </span>
                     </div>
                   )}
 
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-primary-400">Shipping</span>
-                    <span className="text-light font-semibold">
-                      {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-primary-400">Tax (8%)</span>
-                    <span className="text-light font-semibold">
-                      ${tax.toFixed(2)}
+                    <span className="text-primary-400">Delivery Fee</span>
+                    <span className="text-primary-500 text-xs italic">
+                      Calculated at checkout
                     </span>
                   </div>
                 </div>
@@ -350,28 +358,24 @@ const Cart = () => {
                     Total
                   </span>
                   <span className="text-accent font-display font-bold text-2xl">
-                    ${total.toFixed(2)}
+                    {formatPrice(total)}
                   </span>
                 </div>
 
-                {shipping > 0 && (
-                  <div
-                    className="bg-dark-300 border border-dark-400
-                    rounded-xl p-3 text-xs text-primary-400 text-center"
-                  >
-                    Add{" "}
-                    <span className="text-accent font-semibold">
-                      ${(100 - subtotal).toFixed(2)}
-                    </span>{" "}
-                    more for free shipping 🚚
-                  </div>
-                )}
+                {/* Free pickup hint */}
+                <div
+                  className="bg-dark-300 border border-dark-400
+                  rounded-xl p-3 text-xs text-primary-400 text-center"
+                >
+                  🏪 <span className="text-accent font-semibold">Free</span>{" "}
+                  when you pick up at our Lagos store!
+                </div>
 
                 <Link
                   to="/checkout"
-                  className="w-full bg-accent text-dark font-bold text-sm
+                  className="w-full bg-accent text-white font-bold text-sm
                     uppercase tracking-widest py-4 rounded-2xl
-                    hover:bg-light transition-all duration-300
+                    hover:bg-accent-dim transition-all duration-300
                     hover:shadow-xl hover:shadow-accent/30
                     flex items-center justify-center gap-2
                     hover:scale-[1.02] active:scale-95"
@@ -392,16 +396,17 @@ const Cart = () => {
                   <ArrowRight size={16} />
                 </Link>
 
+                {/* Trust badges */}
                 <div className="flex items-center justify-center gap-4 pt-2">
                   <div className="text-center">
                     <p
                       className="text-primary-600 text-[10px] uppercase
                       tracking-widest mb-1"
                     >
-                      Secure Payment
+                      Secure Checkout
                     </p>
-                    <div className="flex gap-2">
-                      {["💳", "🔒", "✓"].map((icon, i) => (
+                    <div className="flex gap-2 justify-center">
+                      {["🔒", "✅", "🇳🇬"].map((icon, i) => (
                         <span key={i} className="text-lg">
                           {icon}
                         </span>

@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+// src/pages/Checkout.jsx
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 import {
@@ -11,59 +12,94 @@ import {
   ChevronUp,
   Shield,
   Package,
+  AlertCircle,
+  Loader2,
+  Wifi,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  ChevronRight,
+  Star,
+  Zap,
 } from "lucide-react";
 import useCartStore from "../store/cartStore";
 import { useOrders } from "../hooks/useOrders";
+import { formatPrice } from "../utils/formatPrice";
+import usePaystack from "../hooks/usePaystack";
+import {
+  detectCardType,
+  getCardLength,
+  getCvvLength,
+  luhnCheck,
+  validateExpiry,
+  getCardNumberStatus,
+  getExpiryStatus,
+  validateCard,
+} from "../utils/cardValidation";
 
-// ─── Step Indicator ───────────────────────────────────────────────────────────
-const StepIndicator = ({ currentStep }) => {
-  const steps = [
-    { id: 1, label: "Shipping" },
-    { id: 2, label: "Payment" },
-    { id: 3, label: "Review" },
-  ];
+// ─── Format helpers ───────────────────────────────────────────────────────────
+const formatCardNumber = (v) =>
+  v
+    .replace(/\D/g, "")
+    .slice(0, 16)
+    .replace(/(.{4})/g, "$1 ")
+    .trim();
 
+const formatExpiry = (v) => {
+  const c = v.replace(/\D/g, "").slice(0, 4);
+  return c.length >= 3 ? `${c.slice(0, 2)}/${c.slice(2)}` : c;
+};
+
+// ─── Card Brand Icon ──────────────────────────────────────────────────────────
+const CardBrandIcon = ({ type, active }) => {
+  const op = active ? "opacity-100" : "opacity-30";
+  if (type === "visa")
+    return (
+      <span
+        className={`font-black text-blue-400 text-xs tracking-wider ${op} transition-opacity`}
+      >
+        VISA
+      </span>
+    );
+  if (type === "mastercard")
+    return (
+      <span className={`${op} transition-opacity flex items-center`}>
+        <span className="w-4 h-4 rounded-full bg-red-500 opacity-90 -mr-2 inline-block" />
+        <span className="w-4 h-4 rounded-full bg-yellow-400 opacity-90 inline-block" />
+      </span>
+    );
+  if (type === "verve")
+    return (
+      <span
+        className={`font-black text-green-400 text-[10px] tracking-wider ${op} transition-opacity`}
+      >
+        VERVE
+      </span>
+    );
+  return null;
+};
+
+// ─── Field Status Dot ─────────────────────────────────────────────────────────
+const FieldStatus = ({ status, message }) => {
+  if (!message || status === "empty" || status === "incomplete") return null;
   return (
-    <div className="flex items-center justify-center mb-8 sm:mb-12">
-      {steps.map((step, index) => (
-        <div key={step.id} className="flex items-center">
-          <div className="flex flex-col items-center gap-1">
-            <div
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center
-                font-bold text-xs sm:text-sm transition-all duration-500
-                ${
-                  currentStep > step.id
-                    ? "bg-accent text-dark"
-                    : currentStep === step.id
-                      ? "bg-accent text-dark ring-4 ring-accent/30"
-                      : "bg-dark-300 border border-dark-400 text-primary-500"
-                }`}
-            >
-              {currentStep > step.id ? <CheckCircle size={16} /> : step.id}
-            </div>
-            <span
-              className={`text-[10px] sm:text-xs font-medium tracking-wide
-                ${currentStep >= step.id ? "text-accent" : "text-primary-600"}`}
-            >
-              {step.label}
-            </span>
-          </div>
-
-          {index < steps.length - 1 && (
-            <div
-              className={`w-16 sm:w-24 h-[2px] mx-2 mb-4 rounded-full
-                transition-all duration-500
-                ${currentStep > step.id ? "bg-accent" : "bg-dark-400"}`}
-            />
-          )}
-        </div>
-      ))}
-    </div>
+    <p
+      className={`text-[11px] flex items-center gap-1 font-medium
+      ${status === "valid" ? "text-green-400" : "text-red-400"}`}
+    >
+      {status === "valid" ? (
+        <CheckCircle size={11} />
+      ) : (
+        <AlertCircle size={11} />
+      )}
+      {message}
+    </p>
   );
 };
 
-// ─── Input Field ──────────────────────────────────────────────────────────────
-const InputField = ({
+// ─── Premium Input ────────────────────────────────────────────────────────────
+const PremiumInput = ({
   label,
   type = "text",
   placeholder,
@@ -71,17 +107,31 @@ const InputField = ({
   onChange,
   error,
   icon: Icon,
-  required = false,
+  required,
+  suffix,
+  maxLength,
+  inputMode,
+  borderOverride,
 }) => (
-  <div className="flex flex-col gap-1.5">
-    <label className="text-primary-400 text-xs font-semibold uppercase tracking-widest">
+  <div className="group flex flex-col gap-1.5">
+    <label className="text-primary-400 text-[11px] font-semibold uppercase tracking-widest">
       {label} {required && <span className="text-accent">*</span>}
     </label>
-    <div className="relative">
+    <div
+      className={`relative flex items-center bg-dark-300 rounded-xl border
+      transition-all duration-300
+      ${
+        borderOverride
+          ? borderOverride
+          : error
+            ? "border-red-500/60"
+            : "border-dark-400 group-focus-within:border-accent"
+      }`}
+    >
       {Icon && (
         <Icon
           size={15}
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-500"
+          className="absolute left-4 text-primary-600 group-focus-within:text-accent transition-colors"
         />
       )}
       <input
@@ -89,23 +139,165 @@ const InputField = ({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className={`w-full bg-dark-300 text-light text-sm px-4 py-3
-          ${Icon ? "pl-10" : ""}
-          rounded-xl border transition-all duration-300
-          placeholder:text-primary-600 focus:outline-none focus:ring-2
-          ${
-            error
-              ? "border-red-500/60 focus:ring-red-500/30 focus:border-red-500"
-              : "border-dark-400 focus:ring-accent/30 focus:border-accent"
-          }`}
+        maxLength={maxLength}
+        inputMode={inputMode}
+        className={`w-full bg-transparent text-light text-sm py-3.5
+          ${Icon ? "pl-10" : "pl-4"}
+          ${suffix ? "pr-16" : "pr-4"}
+          rounded-xl focus:outline-none placeholder:text-primary-700`}
       />
+      {suffix && (
+        <div className="absolute right-3 flex items-center gap-1">{suffix}</div>
+      )}
     </div>
-    {error && <p className="text-red-400 text-[11px]">{error}</p>}
+    {error && (
+      <p className="text-red-400 text-[11px] flex items-center gap-1">
+        <AlertCircle size={10} /> {error}
+      </p>
+    )}
+  </div>
+);
+
+// ─── Animated Card Preview ────────────────────────────────────────────────────
+const CardPreview = ({ cardData, isFlipped }) => {
+  const cardType = detectCardType(cardData.number);
+  return (
+    <div className="relative h-48 perspective-1000 mb-2">
+      <div
+        className={`relative w-full h-full transition-transform duration-700
+        transform-style-3d ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
+      >
+        {/* Front */}
+        <div
+          className="absolute inset-0 backface-hidden rounded-2xl overflow-hidden
+          bg-gradient-to-br from-dark-200 via-[#1a1a2e] to-dark-300
+          border border-white/10 p-6 flex flex-col justify-between shadow-2xl shadow-black/50"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-7 rounded-md border border-yellow-400/40
+                bg-gradient-to-br from-yellow-300/20 to-yellow-600/20 flex items-center justify-center"
+              >
+                <div className="w-6 h-4 rounded-sm border border-yellow-400/30 grid grid-cols-2 gap-px p-0.5">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="bg-yellow-400/30 rounded-[1px]" />
+                  ))}
+                </div>
+              </div>
+              <Wifi size={16} className="text-white/30 rotate-90" />
+            </div>
+            <div className="flex items-center">
+              {cardType ? (
+                <CardBrandIcon type={cardType} active />
+              ) : (
+                <CreditCard size={22} className="text-white/20" />
+              )}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-white/30 text-[9px] uppercase tracking-widest mb-1">
+              Card Number
+            </p>
+            <p className="text-white font-mono text-lg sm:text-xl tracking-[0.2em] font-light">
+              {cardData.number
+                ? cardData.number.padEnd(19, " ").replace(/ /g, "\u00A0")
+                : "•••• •••• •••• ••••"}
+            </p>
+          </div>
+
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-white/30 text-[9px] uppercase tracking-widest mb-0.5">
+                Card Holder
+              </p>
+              <p className="text-white text-sm font-medium tracking-wide uppercase">
+                {cardData.name || "YOUR NAME"}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-white/30 text-[9px] uppercase tracking-widest mb-0.5">
+                Expires
+              </p>
+              <p className="text-white text-sm font-medium">
+                {cardData.expiry || "MM/YY"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Back */}
+        <div
+          className="absolute inset-0 backface-hidden rounded-2xl overflow-hidden
+          bg-gradient-to-br from-dark-300 via-[#1a1a2e] to-dark-200
+          border border-white/10 shadow-2xl shadow-black/50
+          [transform:rotateY(180deg)] flex flex-col justify-center"
+        >
+          <div className="w-full h-10 bg-dark-400 mt-6 mb-4" />
+          <div className="mx-6">
+            <div className="w-full h-9 bg-white/10 rounded flex items-center justify-end px-4">
+              <p className="text-white font-mono text-sm tracking-widest">
+                {cardData.cvv ? "•".repeat(cardData.cvv.length) : "•••"}
+              </p>
+            </div>
+            <p className="text-white/30 text-[9px] mt-1 text-right uppercase tracking-widest">
+              CVV
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Step Indicator ───────────────────────────────────────────────────────────
+const STEPS = [
+  { id: 1, label: "Contact" },
+  { id: 2, label: "Delivery" },
+  { id: 3, label: "Payment" },
+  { id: 4, label: "Review" },
+];
+
+const StepIndicator = ({ currentStep }) => (
+  <div className="flex items-center justify-center mb-8 sm:mb-10">
+    {STEPS.map((step, index) => (
+      <div key={step.id} className="flex items-center">
+        <div className="flex flex-col items-center gap-1">
+          <div
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center
+            justify-center font-bold text-xs transition-all duration-500
+            ${
+              currentStep > step.id
+                ? "bg-accent text-dark"
+                : currentStep === step.id
+                  ? "bg-accent text-dark ring-4 ring-accent/20"
+                  : "bg-dark-300 border border-dark-400 text-primary-600"
+            }`}
+          >
+            {currentStep > step.id ? <CheckCircle size={14} /> : step.id}
+          </div>
+          <span
+            className={`text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase
+            ${currentStep >= step.id ? "text-accent" : "text-primary-700"}`}
+          >
+            {step.label}
+          </span>
+        </div>
+        {index < STEPS.length - 1 && (
+          <div
+            className={`w-10 sm:w-16 h-[1px] mx-1 sm:mx-2 mb-4 transition-all duration-500
+            ${currentStep > step.id ? "bg-accent" : "bg-dark-400"}`}
+          />
+        )}
+      </div>
+    ))}
   </div>
 );
 
 // ─── Order Summary Sidebar ────────────────────────────────────────────────────
-const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
+const OrderSummary = ({ cartItems, subtotal, savings, total }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -117,11 +309,11 @@ const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between lg:cursor-default"
       >
-        <h3 className="font-display font-bold text-lg text-light">
+        <h3 className="font-display font-bold text-base text-light">
           Order Summary
         </h3>
         <span className="lg:hidden text-primary-400">
-          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </span>
       </button>
 
@@ -131,10 +323,7 @@ const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
             key={`${item.id}-${item.color}`}
             className="flex items-center gap-3"
           >
-            <div
-              className="relative shrink-0 w-12 h-12 rounded-xl overflow-hidden
-              bg-dark-300 border border-dark-400"
-            >
+            <div className="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden bg-dark-300 border border-dark-400">
               <img
                 src={item.image}
                 alt={item.name}
@@ -153,14 +342,14 @@ const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div
-                  className="w-2.5 h-2.5 rounded-full border border-dark-400"
+                  className="w-2 h-2 rounded-full border border-dark-400"
                   style={{ backgroundColor: item.color }}
                 />
-                <p className="text-primary-500 text-[10px]">{item.brand}</p>
+                <p className="text-primary-600 text-[10px]">{item.brand}</p>
               </div>
             </div>
             <p className="text-light text-xs font-bold shrink-0">
-              ${(item.price * item.quantity).toLocaleString()}
+              {formatPrice(item.price * item.quantity)}
             </p>
           </div>
         ))}
@@ -169,37 +358,51 @@ const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
           <div className="flex justify-between text-xs">
             <span className="text-primary-400">Subtotal</span>
             <span className="text-light font-semibold">
-              ${subtotal.toFixed(2)}
+              {formatPrice(subtotal)}
             </span>
           </div>
+          {savings > 0 && (
+            <div className="flex justify-between text-xs">
+              <span className="text-green-400">You Save</span>
+              <span className="text-green-400 font-semibold">
+                -{formatPrice(savings)}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between text-xs">
-            <span className="text-primary-400">Shipping</span>
-            <span className="text-light font-semibold">
-              {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
+            <span className="text-primary-400">Delivery</span>
+            <span className="text-primary-500 italic text-[11px]">
+              Confirmed at delivery
             </span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-primary-400">Tax (8%)</span>
-            <span className="text-light font-semibold">${tax.toFixed(2)}</span>
           </div>
         </div>
 
-        <div className="border-t border-dark-400 pt-3 flex justify-between">
+        <div className="border-t border-dark-400 pt-3 flex justify-between items-center">
           <span className="text-light font-display font-bold">Total</span>
           <span className="text-accent font-display font-bold text-xl">
-            ${total.toFixed(2)}
+            {formatPrice(total)}
           </span>
         </div>
 
-        <div className="border-t border-dark-400 pt-3 space-y-2">
+        <div
+          className="bg-dark-300 border border-dark-400 rounded-xl p-3
+          flex items-center justify-center gap-2"
+        >
+          <Lock size={11} className="text-accent" />
+          <span className="text-primary-500 text-[10px]">
+            Secured by <span className="text-accent font-bold">Paystack</span>
+          </span>
+        </div>
+
+        <div className="space-y-2 pt-1">
           {[
-            { icon: Shield, text: "256-bit SSL Encryption" },
-            { icon: Package, text: "Free returns within 30 days" },
-            { icon: Truck, text: "Tracked shipping on all orders" },
+            { icon: Shield, text: "Bank-grade encryption" },
+            { icon: Package, text: "30-day free returns" },
+            { icon: Star, text: "Verified Nigerian business" },
           ].map(({ icon: Icon, text }) => (
             <div key={text} className="flex items-center gap-2">
-              <Icon size={13} className="text-accent shrink-0" />
-              <span className="text-primary-500 text-[11px]">{text}</span>
+              <Icon size={12} className="text-accent shrink-0" />
+              <span className="text-primary-600 text-[10px]">{text}</span>
             </div>
           ))}
         </div>
@@ -208,30 +411,34 @@ const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
   );
 };
 
-// ─── Step 1: Shipping ─────────────────────────────────────────────────────────
-const ShippingStep = ({ data, onChange, errors }) => (
+// ─── Step 1: Contact ──────────────────────────────────────────────────────────
+const ContactStep = ({ data, onChange, errors }) => (
   <div className="space-y-5">
     <div>
-      <h2 className="font-display font-bold text-2xl sm:text-3xl text-light mb-1">
-        Shipping Information
+      <p className="text-accent text-xs font-semibold uppercase tracking-widest mb-1">
+        Step 1 of 4
+      </p>
+      <h2 className="font-display font-bold text-2xl sm:text-3xl text-light">
+        Contact Info
       </h2>
-      <p className="text-primary-500 text-sm">
-        Where should we deliver your order?
+      <p className="text-primary-500 text-sm mt-1">
+        We'll use this to confirm your order.
       </p>
     </div>
 
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <InputField
+      <PremiumInput
         label="First Name"
-        placeholder="John"
+        placeholder="Emeka"
         value={data.firstName}
         onChange={(e) => onChange("firstName", e.target.value)}
         error={errors.firstName}
+        icon={User}
         required
       />
-      <InputField
+      <PremiumInput
         label="Last Name"
-        placeholder="Doe"
+        placeholder="Okafor"
         value={data.lastName}
         onChange={(e) => onChange("lastName", e.target.value)}
         error={errors.lastName}
@@ -239,419 +446,696 @@ const ShippingStep = ({ data, onChange, errors }) => (
       />
     </div>
 
-    <InputField
+    <PremiumInput
       label="Email Address"
       type="email"
-      placeholder="john@example.com"
+      placeholder="emeka@example.com"
       value={data.email}
       onChange={(e) => onChange("email", e.target.value)}
       error={errors.email}
+      icon={Mail}
       required
     />
 
-    <InputField
+    <PremiumInput
       label="Phone Number"
       type="tel"
-      placeholder="+1 (555) 000-0000"
+      placeholder="08012345678"
       value={data.phone}
       onChange={(e) => onChange("phone", e.target.value)}
       error={errors.phone}
+      icon={Phone}
+      inputMode="tel"
       required
     />
-
-    <InputField
-      label="Street Address"
-      placeholder="123 Main Street, Apt 4B"
-      value={data.address}
-      onChange={(e) => onChange("address", e.target.value)}
-      error={errors.address}
-      required
-    />
-
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <InputField
-        label="City"
-        placeholder="New York"
-        value={data.city}
-        onChange={(e) => onChange("city", e.target.value)}
-        error={errors.city}
-        required
-      />
-      <InputField
-        label="State"
-        placeholder="NY"
-        value={data.state}
-        onChange={(e) => onChange("state", e.target.value)}
-        error={errors.state}
-        required
-      />
-      <InputField
-        label="ZIP Code"
-        placeholder="10001"
-        value={data.zip}
-        onChange={(e) => onChange("zip", e.target.value)}
-        error={errors.zip}
-        required
-      />
-    </div>
-
-    <div className="space-y-3">
-      <label className="text-primary-400 text-xs font-semibold uppercase tracking-widest">
-        Shipping Method <span className="text-accent">*</span>
-      </label>
-      {[
-        {
-          id: "standard",
-          label: "Standard Shipping",
-          duration: "5–7 business days",
-          price: "Free",
-        },
-        {
-          id: "express",
-          label: "Express Shipping",
-          duration: "2–3 business days",
-          price: "$9.99",
-        },
-        {
-          id: "overnight",
-          label: "Overnight Shipping",
-          duration: "Next business day",
-          price: "$19.99",
-        },
-      ].map((method) => (
-        <label
-          key={method.id}
-          className={`flex items-center justify-between p-4 rounded-xl border
-            cursor-pointer transition-all duration-300
-            ${
-              data.shippingMethod === method.id
-                ? "border-accent bg-accent/5"
-                : "border-dark-400 bg-dark-300 hover:border-accent/40"
-            }`}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center
-                transition-all duration-300
-                ${data.shippingMethod === method.id ? "border-accent" : "border-primary-500"}`}
-            >
-              {data.shippingMethod === method.id && (
-                <div className="w-2 h-2 rounded-full bg-accent" />
-              )}
-            </div>
-            <div>
-              <p className="text-light text-sm font-semibold">{method.label}</p>
-              <p className="text-primary-500 text-xs">{method.duration}</p>
-            </div>
-          </div>
-          <span className="text-accent font-bold text-sm">{method.price}</span>
-          <input
-            type="radio"
-            name="shippingMethod"
-            value={method.id}
-            checked={data.shippingMethod === method.id}
-            onChange={() => onChange("shippingMethod", method.id)}
-            className="sr-only"
-          />
-        </label>
-      ))}
-    </div>
   </div>
 );
 
-// ─── Step 2: Payment ──────────────────────────────────────────────────────────
-const PaymentStep = ({ data, onChange, errors }) => {
-  const formatCardNumber = (value) => {
-    const cleaned = value.replace(/\D/g, "").slice(0, 16);
-    return cleaned.replace(/(.{4})/g, "$1 ").trim();
-  };
+// ─── Step 2: Delivery ─────────────────────────────────────────────────────────
+const DeliveryStep = ({ data, onChange, errors }) => {
+  const methods = [
+    {
+      id: "pickup",
+      label: "Store Pickup",
+      sub: "Ready same day · Free",
+      note: "📍 Frank Gadgets, Lagos",
+      badge: "FREE",
+      badgeColor: "text-accent",
+    },
+    {
+      id: "lagos",
+      label: "Lagos Delivery",
+      sub: "1–2 business days",
+      note: "Within Lagos State",
+      badge: "₦2,000",
+      badgeColor: "text-light",
+    },
+    {
+      id: "interstate",
+      label: "Interstate Delivery",
+      sub: "3–5 business days",
+      note: "All Nigerian states",
+      badge: "₦4,500",
+      badgeColor: "text-light",
+    },
+  ];
 
-  const formatExpiry = (value) => {
-    const cleaned = value.replace(/\D/g, "").slice(0, 4);
-    if (cleaned.length >= 2) {
-      return `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
-    }
-    return cleaned;
-  };
+  const needsAddress = data.shippingMethod !== "pickup";
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-display font-bold text-2xl sm:text-3xl text-light mb-1">
-          Payment Details
+        <p className="text-accent text-xs font-semibold uppercase tracking-widest mb-1">
+          Step 2 of 4
+        </p>
+        <h2 className="font-display font-bold text-2xl sm:text-3xl text-light">
+          Delivery
         </h2>
-        <p className="text-primary-500 text-sm">
-          Your payment info is encrypted and secure.
+        <p className="text-primary-500 text-sm mt-1">
+          Choose how you want to receive your order.
         </p>
       </div>
 
+      <div className="space-y-2">
+        {methods.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => onChange("shippingMethod", m.id)}
+            className={`w-full flex items-center gap-4 p-4 rounded-2xl border
+              text-left transition-all duration-300
+              ${
+                data.shippingMethod === m.id
+                  ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
+                  : "border-dark-400 bg-dark-300 hover:border-accent/30"
+              }`}
+          >
+            <div
+              className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center
+              justify-center transition-all
+              ${data.shippingMethod === m.id ? "border-accent" : "border-primary-600"}`}
+            >
+              {data.shippingMethod === m.id && (
+                <div className="w-2.5 h-2.5 rounded-full bg-accent" />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-light text-sm font-semibold">{m.label}</p>
+              <p className="text-primary-500 text-xs">{m.sub}</p>
+              <p className="text-primary-700 text-[10px]">{m.note}</p>
+            </div>
+            <span className={`font-bold text-sm shrink-0 ${m.badgeColor}`}>
+              {m.badge}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Animated address fields */}
       <div
-        className="relative h-44 sm:h-48 rounded-2xl overflow-hidden
-        bg-gradient-to-br from-dark-300 via-dark-200 to-dark-300
-        border border-dark-400 p-6 flex flex-col justify-between"
+        className={`space-y-4 overflow-hidden transition-all duration-500
+        ${needsAddress ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex gap-1">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full bg-accent/60" />
-            ))}
-          </div>
-          <CreditCard size={28} className="text-accent/70" />
-        </div>
-
-        <div>
-          <p className="text-light/40 text-xs uppercase tracking-widest mb-1">
-            Card Number
+        <div className="pt-2 border-t border-dark-400">
+          <p className="text-primary-400 text-xs mb-3 font-medium">
+            Delivery address
           </p>
-          <p className="text-light font-mono text-base sm:text-lg tracking-widest">
-            {data.cardNumber || "•••• •••• •••• ••••"}
-          </p>
+          <PremiumInput
+            label="Street Address"
+            placeholder="12 Adeola Odeku Street"
+            value={data.address}
+            onChange={(e) => onChange("address", e.target.value)}
+            error={errors.address}
+            icon={MapPin}
+            required={needsAddress}
+          />
         </div>
-
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-light/40 text-[10px] uppercase tracking-widest">
-              Card Holder
-            </p>
-            <p className="text-light font-semibold text-sm">
-              {data.cardName || "FULL NAME"}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-light/40 text-[10px] uppercase tracking-widest">
-              Expires
-            </p>
-            <p className="text-light font-semibold text-sm">
-              {data.expiry || "MM/YY"}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+          <PremiumInput
+            label="City / Area"
+            placeholder="Lagos Island"
+            value={data.city}
+            onChange={(e) => onChange("city", e.target.value)}
+            error={errors.city}
+            required={needsAddress}
+          />
+          <PremiumInput
+            label="State"
+            placeholder="Lagos"
+            value={data.state}
+            onChange={(e) => onChange("state", e.target.value)}
+            error={errors.state}
+            required={needsAddress}
+          />
         </div>
+        <PremiumInput
+          label="Closest Landmark (optional)"
+          placeholder="Near Shoprite, Lekki"
+          value={data.landmark}
+          onChange={(e) => onChange("landmark", e.target.value)}
+        />
+      </div>
+    </div>
+  );
+};
 
+// ─── Step 3: Payment ──────────────────────────────────────────────────────────
+const PaymentStep = ({ cardData, onChange, errors }) => {
+  const [cvvFocused, setCvvFocused] = useState(false);
+
+  const cardType = detectCardType(cardData.number);
+  const cvvLength = getCvvLength(cardType);
+  const rawNumber = cardData.number.replace(/\s/g, "");
+  const requiredLen = getCardLength(cardType);
+
+  // Live completeness
+  const numberValid = rawNumber.length === requiredLen && luhnCheck(rawNumber);
+  const expiryValid = validateExpiry(cardData.expiry).valid;
+  const cvvValid = cardData.cvv.length >= cvvLength;
+  const nameValid = cardData.name.trim().split(" ").filter(Boolean).length >= 2;
+  const completedFields = [
+    numberValid,
+    expiryValid,
+    cvvValid,
+    nameValid,
+  ].filter(Boolean).length;
+  const progressPct = (completedFields / 4) * 100;
+
+  // Card number border color
+  const numStatus = getCardNumberStatus(cardData.number);
+  const numBorder =
+    errors.number || numStatus.status === "invalid"
+      ? "border-red-500/60"
+      : numStatus.status === "valid"
+        ? "border-green-500/60"
+        : "border-dark-400 group-focus-within:border-accent";
+
+  // Expiry border color
+  const expStatus = getExpiryStatus(cardData.expiry);
+  const expBorder =
+    errors.expiry || expStatus.status === "invalid"
+      ? "border-red-500/60"
+      : expStatus.status === "valid"
+        ? "border-green-500/60"
+        : "border-dark-400 group-focus-within:border-accent";
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-accent text-xs font-semibold uppercase tracking-widest mb-1">
+          Step 3 of 4
+        </p>
+        <h2 className="font-display font-bold text-2xl sm:text-3xl text-light">
+          Payment
+        </h2>
+        <p className="text-primary-500 text-sm mt-1">
+          Your card details are encrypted end-to-end.
+        </p>
+      </div>
+
+      {/* Progress bar */}
+      <div className="space-y-1.5">
+        <div className="flex justify-between items-center">
+          <span className="text-primary-500 text-[10px] uppercase tracking-widest">
+            Card Details
+          </span>
+          <span
+            className={`text-[10px] font-semibold transition-colors
+            ${completedFields === 4 ? "text-green-400" : "text-primary-500"}`}
+          >
+            {completedFields === 4
+              ? "✓ Ready to pay"
+              : `${completedFields}/4 complete`}
+          </span>
+        </div>
+        <div className="h-1 bg-dark-400 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500
+            ${completedFields === 4 ? "bg-green-400" : "bg-accent"}`}
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Card preview */}
+      <CardPreview cardData={cardData} isFlipped={cvvFocused} />
+
+      {/* Accepted cards */}
+      <div className="flex items-center gap-3 px-1">
+        <span className="text-primary-600 text-[10px] uppercase tracking-widest shrink-0">
+          Accepted:
+        </span>
+        {["visa", "mastercard", "verve"].map((t) => (
+          <div
+            key={t}
+            className={`px-2.5 py-1.5 rounded-lg border transition-all duration-300
+            ${
+              cardType === t
+                ? "border-accent/60 bg-accent/5"
+                : "border-dark-400 bg-dark-300 opacity-50"
+            }`}
+          >
+            <CardBrandIcon type={t} active={cardType === t || !cardType} />
+          </div>
+        ))}
+        {rawNumber.length >= 6 && !cardType && (
+          <span className="text-red-400 text-[10px] flex items-center gap-1">
+            <AlertCircle size={10} /> Unsupported
+          </span>
+        )}
+      </div>
+
+      {/* Card Number with live Luhn */}
+      <div className="group flex flex-col gap-1.5">
+        <label className="text-primary-400 text-[11px] font-semibold uppercase tracking-widest">
+          Card Number <span className="text-accent">*</span>
+        </label>
         <div
-          className="absolute inset-0 bg-gradient-to-r from-transparent
-          via-white/5 to-transparent -skew-x-12 pointer-events-none"
-        />
+          className={`relative flex items-center bg-dark-300 rounded-xl border
+          transition-all duration-300 ${numBorder}`}
+        >
+          <CreditCard
+            size={15}
+            className="absolute left-4 text-primary-600 group-focus-within:text-accent transition-colors"
+          />
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="0000 0000 0000 0000"
+            value={cardData.number}
+            maxLength={19}
+            onChange={(e) =>
+              onChange("number", formatCardNumber(e.target.value))
+            }
+            className="w-full bg-transparent text-light text-sm py-3.5 pl-10 pr-20
+              rounded-xl focus:outline-none placeholder:text-primary-700 font-mono tracking-wider"
+          />
+          <div className="absolute right-3 flex items-center gap-2">
+            {cardType && <CardBrandIcon type={cardType} active />}
+            {numStatus.status === "valid" && (
+              <CheckCircle size={14} className="text-green-400" />
+            )}
+            {numStatus.status === "invalid" && (
+              <AlertCircle size={14} className="text-red-400" />
+            )}
+          </div>
+        </div>
+        <FieldStatus status={numStatus.status} message={numStatus.message} />
+        {errors.number && numStatus.status !== "valid" && (
+          <p className="text-red-400 text-[11px] flex items-center gap-1">
+            <AlertCircle size={10} /> {errors.number}
+          </p>
+        )}
       </div>
 
-      <InputField
-        label="Name on Card"
-        placeholder="John Doe"
-        value={data.cardName}
-        onChange={(e) => onChange("cardName", e.target.value.toUpperCase())}
-        error={errors.cardName}
-        required
-      />
-
-      <InputField
-        label="Card Number"
-        placeholder="1234 5678 9012 3456"
-        value={data.cardNumber}
-        onChange={(e) =>
-          onChange("cardNumber", formatCardNumber(e.target.value))
-        }
-        error={errors.cardNumber}
-        icon={CreditCard}
-        required
-      />
-
-      <div className="grid grid-cols-2 gap-4">
-        <InputField
-          label="Expiry Date"
-          placeholder="MM/YY"
-          value={data.expiry}
-          onChange={(e) => onChange("expiry", formatExpiry(e.target.value))}
-          error={errors.expiry}
-          required
-        />
-        <InputField
-          label="CVV"
-          placeholder="•••"
-          type="password"
-          value={data.cvv}
-          onChange={(e) =>
-            onChange("cvv", e.target.value.replace(/\D/g, "").slice(0, 4))
-          }
-          error={errors.cvv}
-          required
-        />
+      {/* Name on card */}
+      <div className="group flex flex-col gap-1.5">
+        <label className="text-primary-400 text-[11px] font-semibold uppercase tracking-widest">
+          Name on Card <span className="text-accent">*</span>
+        </label>
+        <div
+          className={`relative flex items-center bg-dark-300 rounded-xl border
+          transition-all duration-300
+          ${
+            errors.name
+              ? "border-red-500/60"
+              : nameValid
+                ? "border-green-500/60"
+                : "border-dark-400 group-focus-within:border-accent"
+          }`}
+        >
+          <User
+            size={15}
+            className="absolute left-4 text-primary-600 group-focus-within:text-accent transition-colors"
+          />
+          <input
+            type="text"
+            placeholder="EMEKA OKAFOR"
+            value={cardData.name}
+            onChange={(e) => onChange("name", e.target.value.toUpperCase())}
+            className="w-full bg-transparent text-light text-sm py-3.5 pl-10 pr-10
+              rounded-xl focus:outline-none placeholder:text-primary-700 tracking-wider"
+          />
+          {nameValid && (
+            <CheckCircle
+              size={14}
+              className="absolute right-3 text-green-400"
+            />
+          )}
+        </div>
+        {errors.name && (
+          <p className="text-red-400 text-[11px] flex items-center gap-1">
+            <AlertCircle size={10} /> {errors.name}
+          </p>
+        )}
       </div>
 
-      <label
-        className="flex items-center gap-3 p-4 bg-dark-300 border
-        border-dark-400 rounded-xl cursor-pointer hover:border-accent/40
-        transition-all duration-300"
-      >
-        <input
-          type="checkbox"
-          checked={data.saveCard}
-          onChange={(e) => onChange("saveCard", e.target.checked)}
-          className="w-4 h-4 accent-accent"
-        />
+      {/* Expiry + CVV */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Expiry */}
+        <div className="group flex flex-col gap-1.5">
+          <label className="text-primary-400 text-[11px] font-semibold uppercase tracking-widest">
+            Expiry <span className="text-accent">*</span>
+          </label>
+          <div
+            className={`relative flex items-center bg-dark-300 rounded-xl border
+            transition-all duration-300 ${expBorder}`}
+          >
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="MM/YY"
+              value={cardData.expiry}
+              maxLength={5}
+              onChange={(e) => onChange("expiry", formatExpiry(e.target.value))}
+              className="w-full bg-transparent text-light text-sm py-3.5 px-4
+                rounded-xl focus:outline-none placeholder:text-primary-700"
+            />
+            {expStatus.status === "valid" && (
+              <CheckCircle
+                size={14}
+                className="absolute right-3 text-green-400"
+              />
+            )}
+            {expStatus.status === "invalid" && (
+              <AlertCircle
+                size={14}
+                className="absolute right-3 text-red-400"
+              />
+            )}
+          </div>
+          <FieldStatus status={expStatus.status} message={expStatus.message} />
+          {errors.expiry && expStatus.status !== "valid" && (
+            <p className="text-red-400 text-[11px] flex items-center gap-1">
+              <AlertCircle size={10} /> {errors.expiry}
+            </p>
+          )}
+        </div>
+
+        {/* CVV - flips card */}
+        <div className="group flex flex-col gap-1.5">
+          <label className="text-primary-400 text-[11px] font-semibold uppercase tracking-widest">
+            CVV <span className="text-accent">*</span>
+            <span className="text-primary-700 normal-case font-normal ml-1">
+              ({cvvLength} digits)
+            </span>
+          </label>
+          <div
+            className={`relative flex items-center bg-dark-300 rounded-xl border
+            transition-all duration-300
+            ${
+              errors.cvv
+                ? "border-red-500/60"
+                : cvvValid
+                  ? "border-green-500/60"
+                  : "border-dark-400 group-focus-within:border-accent"
+            }`}
+          >
+            <input
+              type="password"
+              inputMode="numeric"
+              placeholder={"•".repeat(cvvLength)}
+              value={cardData.cvv}
+              maxLength={cvvLength}
+              onChange={(e) =>
+                onChange(
+                  "cvv",
+                  e.target.value.replace(/\D/g, "").slice(0, cvvLength),
+                )
+              }
+              onFocus={() => setCvvFocused(true)}
+              onBlur={() => setCvvFocused(false)}
+              className="w-full bg-transparent text-light text-sm py-3.5 px-4
+                rounded-xl focus:outline-none placeholder:text-primary-700"
+            />
+            {cvvValid && (
+              <CheckCircle
+                size={14}
+                className="absolute right-3 text-green-400"
+              />
+            )}
+          </div>
+          {errors.cvv && (
+            <p className="text-red-400 text-[11px] flex items-center gap-1">
+              <AlertCircle size={10} /> {errors.cvv}
+            </p>
+          )}
+          {cvvFocused && (
+            <p className="text-primary-600 text-[10px]">
+              {cvvLength}-digit code on the{" "}
+              {cardType === "amex" ? "front" : "back"} of your card
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Save card */}
+      <label className="flex items-center gap-3 cursor-pointer group">
+        <div
+          onClick={() => onChange("saveCard", !cardData.saveCard)}
+          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center
+          transition-all duration-200 cursor-pointer
+          ${cardData.saveCard ? "bg-accent border-accent" : "border-dark-400 group-hover:border-accent/50"}`}
+        >
+          {cardData.saveCard && <CheckCircle size={12} className="text-dark" />}
+        </div>
         <span className="text-primary-400 text-sm">
-          Save card for future purchases
+          Save card for faster checkout
         </span>
       </label>
 
-      <div
-        className="flex items-center gap-3 p-4 bg-dark-300 border
-        border-dark-400 rounded-xl"
-      >
-        <Lock size={16} className="text-accent shrink-0" />
-        <p className="text-primary-400 text-xs leading-relaxed">
-          Your payment information is encrypted with 256-bit SSL. We never store
-          your full card details.
+      {/* Security */}
+      <div className="flex items-start gap-3 p-4 bg-dark-300 border border-dark-400 rounded-xl">
+        <Lock size={14} className="text-accent shrink-0 mt-0.5" />
+        <p className="text-primary-500 text-xs leading-relaxed">
+          256-bit SSL encrypted. Validated with the{" "}
+          <span className="text-accent">Luhn algorithm</span> before processing.
+          Powered by <span className="text-accent font-semibold">Paystack</span>
+          .
         </p>
       </div>
     </div>
   );
 };
 
-// ─── Step 3: Review ───────────────────────────────────────────────────────────
-const ReviewStep = ({ shipping, payment, cartItems, subtotal, total }) => (
-  <div className="space-y-5">
-    <div>
-      <h2 className="font-display font-bold text-2xl sm:text-3xl text-light mb-1">
-        Review Your Order
-      </h2>
-      <p className="text-primary-500 text-sm">
-        Double-check everything before placing your order.
-      </p>
-    </div>
+// ─── Step 4: Review ───────────────────────────────────────────────────────────
+const ReviewStep = ({ shipping, cardData, cartItems, total }) => {
+  const deliveryLabels = {
+    pickup: "Store Pickup — Free",
+    lagos: "Lagos Delivery — ₦2,000",
+    interstate: "Interstate Delivery — ₦4,500",
+  };
+  const cardType = detectCardType(cardData.number);
+  const maskedCard = cardData.number
+    ? `•••• •••• •••• ${cardData.number.replace(/\s/g, "").slice(-4)}`
+    : "";
 
-    <div className="bg-dark-300 border border-dark-400 rounded-2xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-light font-semibold text-sm flex items-center gap-2">
-          <Truck size={15} className="text-accent" />
-          Shipping To
-        </h4>
-      </div>
-      <div className="text-primary-400 text-sm space-y-1">
-        <p className="text-light font-medium">
-          {shipping.firstName} {shipping.lastName}
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-accent text-xs font-semibold uppercase tracking-widest mb-1">
+          Step 4 of 4
         </p>
-        <p>{shipping.address}</p>
-        <p>
-          {shipping.city}, {shipping.state} {shipping.zip}
-        </p>
-        <p>{shipping.email}</p>
-        <p>{shipping.phone}</p>
-        <p className="text-accent capitalize mt-1">
-          {shipping.shippingMethod} shipping
+        <h2 className="font-display font-bold text-2xl sm:text-3xl text-light">
+          Review & Pay
+        </h2>
+        <p className="text-primary-500 text-sm mt-1">
+          Everything look good? Let's go.
         </p>
       </div>
-    </div>
 
-    <div className="bg-dark-300 border border-dark-400 rounded-2xl p-4 space-y-3">
-      <h4 className="text-light font-semibold text-sm flex items-center gap-2">
-        <CreditCard size={15} className="text-accent" />
-        Payment Method
-      </h4>
-      <div className="flex items-center gap-3">
-        <div
-          className="w-10 h-7 bg-dark-200 border border-dark-400
-          rounded-md flex items-center justify-center"
-        >
-          <CreditCard size={14} className="text-accent" />
-        </div>
-        <div>
-          <p className="text-light text-sm font-medium">
-            •••• •••• •••• {payment.cardNumber.replace(/\s/g, "").slice(-4)}
+      <div className="space-y-3">
+        {/* Contact */}
+        <div className="bg-dark-300 border border-dark-400 rounded-2xl p-4 space-y-1">
+          <p className="text-primary-500 text-[10px] uppercase tracking-widest font-semibold mb-2">
+            Contact
           </p>
-          <p className="text-primary-500 text-xs">{payment.cardName}</p>
+          <p className="text-light text-sm font-semibold">
+            {shipping.firstName} {shipping.lastName}
+          </p>
+          <p className="text-primary-400 text-xs">{shipping.email}</p>
+          <p className="text-primary-400 text-xs">{shipping.phone}</p>
+        </div>
+
+        {/* Delivery */}
+        <div className="bg-dark-300 border border-dark-400 rounded-2xl p-4 space-y-1">
+          <p className="text-primary-500 text-[10px] uppercase tracking-widest font-semibold mb-2">
+            Delivery
+          </p>
+          {shipping.address && (
+            <p className="text-light text-sm">{shipping.address}</p>
+          )}
+          {shipping.landmark && (
+            <p className="text-primary-500 text-xs">
+              Near: {shipping.landmark}
+            </p>
+          )}
+          {shipping.city && (
+            <p className="text-primary-400 text-xs">
+              {shipping.city}
+              {shipping.state ? `, ${shipping.state}` : ""}
+            </p>
+          )}
+          <p className="text-accent text-xs font-medium mt-1">
+            {deliveryLabels[shipping.shippingMethod]}
+          </p>
+        </div>
+
+        {/* Payment */}
+        <div className="bg-dark-300 border border-dark-400 rounded-2xl p-4">
+          <p className="text-primary-500 text-[10px] uppercase tracking-widest font-semibold mb-2">
+            Payment
+          </p>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-7 bg-dark-200 border border-dark-400 rounded-lg
+              flex items-center justify-center"
+            >
+              {cardType ? (
+                <CardBrandIcon type={cardType} active />
+              ) : (
+                <CreditCard size={12} className="text-primary-500" />
+              )}
+            </div>
+            <div>
+              <p className="text-light text-xs font-semibold">{maskedCard}</p>
+              <p className="text-primary-500 text-[10px]">{cardData.name}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Items */}
+        <div className="bg-dark-300 border border-dark-400 rounded-2xl p-4">
+          <p className="text-primary-500 text-[10px] uppercase tracking-widest font-semibold mb-3">
+            {cartItems.length} {cartItems.length === 1 ? "Item" : "Items"}
+          </p>
+          <div className="space-y-2.5 max-h-44 overflow-y-auto pr-1">
+            {cartItems.map((item) => (
+              <div
+                key={`${item.id}-${item.color}`}
+                className="flex items-center gap-3"
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-9 h-9 rounded-lg object-cover border border-dark-400 shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-light text-xs font-semibold line-clamp-1">
+                    {item.name}
+                  </p>
+                  <p className="text-primary-600 text-[10px]">
+                    Qty: {item.quantity}
+                  </p>
+                </div>
+                <p className="text-light text-xs font-bold shrink-0">
+                  {formatPrice(item.price * item.quantity)}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between items-center pt-3 mt-3 border-t border-dark-400">
+            <span className="text-light font-bold text-sm">Total</span>
+            <span className="text-accent font-display font-bold text-xl">
+              {formatPrice(total)}
+            </span>
+          </div>
         </div>
       </div>
     </div>
-
-    <div className="bg-dark-300 border border-dark-400 rounded-2xl p-4 space-y-3">
-      <h4 className="text-light font-semibold text-sm flex items-center gap-2">
-        <Package size={15} className="text-accent" />
-        {cartItems.length} {cartItems.length === 1 ? "Item" : "Items"}
-      </h4>
-      <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
-        {cartItems.map((item) => (
-          <div
-            key={`${item.id}-${item.color}`}
-            className="flex items-center gap-3"
-          >
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-10 h-10 rounded-lg object-cover border border-dark-400 shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-light text-xs font-semibold line-clamp-1">
-                {item.name}
-              </p>
-              <p className="text-primary-500 text-[10px]">
-                Qty: {item.quantity}
-              </p>
-            </div>
-            <p className="text-light text-xs font-bold">
-              ${(item.price * item.quantity).toLocaleString()}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="border-t border-dark-400 pt-3 flex justify-between">
-        <span className="text-light font-bold">Total</span>
-        <span className="text-accent font-display font-bold text-lg">
-          ${total.toFixed(2)}
-        </span>
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 // ─── Success Screen ───────────────────────────────────────────────────────────
-const SuccessScreen = ({ orderNumber }) => {
-  const successRef = useRef(null);
+const SuccessScreen = ({ orderNumber, paymentRef, total }) => {
+  const ref = useRef(null);
+  const checkRef = useRef(null);
 
   useEffect(() => {
     gsap.fromTo(
-      successRef.current,
-      { scale: 0.8, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.7)" },
+      ref.current,
+      { scale: 0.9, opacity: 0, y: 30 },
+      { scale: 1, opacity: 1, y: 0, duration: 0.7, ease: "back.out(1.4)" },
+    );
+    gsap.fromTo(
+      checkRef.current,
+      { scale: 0, rotate: -180 },
+      { scale: 1, rotate: 0, duration: 0.6, delay: 0.3, ease: "back.out(2)" },
     );
   }, []);
 
   return (
     <div
-      ref={successRef}
-      className="flex flex-col items-center justify-center py-16 text-center"
+      ref={ref}
+      className="flex flex-col items-center justify-center py-12 text-center max-w-sm mx-auto"
     >
-      <div
-        className="w-24 h-24 rounded-full bg-accent/10 border-2 border-accent
-        flex items-center justify-center mb-6 animate-pulse"
-      >
-        <CheckCircle size={48} className="text-accent" />
+      <div className="relative mb-8">
+        <div
+          className="w-28 h-28 rounded-full bg-accent/10 border-2 border-accent
+          flex items-center justify-center"
+        >
+          <div ref={checkRef}>
+            <CheckCircle size={56} className="text-accent" />
+          </div>
+        </div>
+        <div className="absolute inset-0 rounded-full border-2 border-accent/30 animate-ping" />
       </div>
-      <h2 className="font-display font-bold text-3xl sm:text-4xl text-light mb-2">
-        Order Placed!
-      </h2>
-      <p className="text-primary-400 text-sm sm:text-base mb-2">
-        Thank you for your purchase 🎉
+
+      <div className="flex items-center gap-2 mb-2">
+        <Zap size={16} className="text-accent" />
+        <h2 className="font-display font-bold text-3xl text-light">
+          Payment Confirmed
+        </h2>
+      </div>
+      <p className="text-primary-400 text-sm mb-6">
+        Your order is being processed 🇳🇬
       </p>
-      <p className="text-primary-600 text-xs mb-2">
-        Order <span className="text-accent font-bold">#{orderNumber}</span>
+
+      <div
+        className="w-full bg-dark-200 border border-dark-400 rounded-2xl p-5
+        space-y-3 text-left mb-6"
+      >
+        <div className="flex justify-between items-center pb-3 border-b border-dark-400">
+          <span className="text-primary-500 text-xs uppercase tracking-widest">
+            Order
+          </span>
+          <span className="text-accent font-bold text-sm">#{orderNumber}</span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-primary-500">Payment Ref</span>
+          <span className="text-light font-mono text-[10px] max-w-[160px] truncate">
+            {paymentRef}
+          </span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-primary-500">Amount Paid</span>
+          <span className="text-accent font-bold">{formatPrice(total)}</span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-primary-500">Status</span>
+          <span className="text-green-400 font-semibold flex items-center gap-1">
+            <CheckCircle size={10} /> Paid
+          </span>
+        </div>
+      </div>
+
+      <p className="text-primary-600 text-xs mb-8 leading-relaxed">
+        Confirmation email sent. Our team will reach out within 24 hours.
       </p>
-      <p className="text-primary-600 text-xs mb-8">
-        Confirmation sent to your email
-      </p>
-      <div className="flex flex-col sm:flex-row gap-3">
+
+      <div className="flex flex-col sm:flex-row gap-3 w-full">
         <Link
           to="/products"
-          className="btn-primary flex items-center gap-2 justify-center"
+          className="btn-primary flex items-center gap-2 justify-center flex-1 text-sm"
         >
           Continue Shopping
         </Link>
         <Link
           to="/"
-          className="border border-dark-400 text-primary-400 font-semibold
-            text-sm px-6 py-3 rounded-2xl hover:border-accent hover:text-accent
+          className="border border-dark-400 text-primary-400 font-semibold text-sm
+            px-5 py-3 rounded-2xl hover:border-accent hover:text-accent
             transition-all duration-300 flex items-center gap-2 justify-center"
         >
-          Back to Home
+          Home
         </Link>
       </div>
     </div>
@@ -664,39 +1148,21 @@ const Checkout = () => {
   const cartItems = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clearCart);
   const { addOrder } = useOrders();
+  const { initializePayment } = usePaystack();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [orderNumber] = useState(
-    () => `ORD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-  );
+  const [paymentRef, setPaymentRef] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentCancelled, setPaymentCancelled] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const [orderNumber] = useState(
+    () => `FG${Date.now().toString(36).toUpperCase()}`,
+  );
 
   const formRef = useRef(null);
   const pageRef = useRef(null);
-
-  useEffect(() => {
-    if (cartItems.length === 0 && !isSuccess) navigate("/cart");
-    window.scrollTo(0, 0);
-  }, []);
-
-  useEffect(() => {
-    gsap.fromTo(
-      pageRef.current,
-      { y: -20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
-    );
-  }, []);
-
-  useEffect(() => {
-    if (formRef.current) {
-      gsap.fromTo(
-        formRef.current,
-        { x: 40, opacity: 0 },
-        { x: 0, opacity: 1, duration: 0.4, ease: "power3.out" },
-      );
-    }
-  }, [currentStep]);
 
   const [shippingData, setShippingData] = useState({
     firstName: "",
@@ -706,196 +1172,282 @@ const Checkout = () => {
     address: "",
     city: "",
     state: "",
-    zip: "",
-    shippingMethod: "standard",
+    landmark: "",
+    shippingMethod: "pickup",
   });
 
-  const [paymentData, setPaymentData] = useState({
-    cardName: "",
-    cardNumber: "",
+  const [cardData, setCardData] = useState({
+    number: "",
+    name: "",
     expiry: "",
     cvv: "",
     saveCard: false,
   });
 
-  const [errors, setErrors] = useState({});
-
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const shipping = subtotal > 100 ? 0 : 9.99;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+  const savings = cartItems.reduce(
+    (sum, item) =>
+      sum + ((item.oldPrice || item.price) - item.price) * item.quantity,
+    0,
+  );
+  const total = subtotal;
 
-  const validateShipping = () => {
+  useEffect(() => {
+    if (cartItems.length === 0 && !isSuccess) navigate("/cart");
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    if (!pageRef.current) return;
+    gsap.fromTo(
+      pageRef.current,
+      { opacity: 0, y: -16 },
+      { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!formRef.current) return;
+    gsap.fromTo(
+      formRef.current,
+      { opacity: 0, x: 24 },
+      { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" },
+    );
+  }, [currentStep]);
+
+  const validateContact = useCallback(() => {
     const e = {};
-    if (!shippingData.firstName.trim()) e.firstName = "First name is required";
-    if (!shippingData.lastName.trim()) e.lastName = "Last name is required";
-    if (!shippingData.email.trim()) e.email = "Email is required";
+    if (!shippingData.firstName.trim()) e.firstName = "Required";
+    if (!shippingData.lastName.trim()) e.lastName = "Required";
+    if (!shippingData.email.trim()) e.email = "Required";
     else if (!/\S+@\S+\.\S+/.test(shippingData.email))
-      e.email = "Invalid email address";
-    if (!shippingData.phone.trim()) e.phone = "Phone number is required";
-    if (!shippingData.address.trim()) e.address = "Address is required";
-    if (!shippingData.city.trim()) e.city = "City is required";
-    if (!shippingData.state.trim()) e.state = "State is required";
-    if (!shippingData.zip.trim()) e.zip = "ZIP code is required";
+      e.email = "Invalid email";
+    if (!shippingData.phone.trim()) e.phone = "Required";
     setErrors(e);
     return Object.keys(e).length === 0;
-  };
+  }, [shippingData]);
 
-  const validatePayment = () => {
+  const validateDelivery = useCallback(() => {
     const e = {};
-    if (!paymentData.cardName.trim()) e.cardName = "Name on card is required";
-    if (!paymentData.cardNumber.trim())
-      e.cardNumber = "Card number is required";
-    else if (paymentData.cardNumber.replace(/\s/g, "").length < 16)
-      e.cardNumber = "Invalid card number";
-    if (!paymentData.expiry.trim()) e.expiry = "Expiry date is required";
-    else if (!/^\d{2}\/\d{2}$/.test(paymentData.expiry))
-      e.expiry = "Use MM/YY format";
-    if (!paymentData.cvv.trim()) e.cvv = "CVV is required";
-    else if (paymentData.cvv.length < 3) e.cvv = "Invalid CVV";
+    if (shippingData.shippingMethod !== "pickup") {
+      if (!shippingData.address.trim()) e.address = "Required";
+      if (!shippingData.city.trim()) e.city = "Required";
+      if (!shippingData.state.trim()) e.state = "Required";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
-  };
+  }, [shippingData]);
+
+  // ✅ Uses validateCard from cardValidation.js (Luhn + expiry + CVV length)
+  const validatePayment = useCallback(() => {
+    const { errors: e, isValid } = validateCard(cardData);
+    setErrors(e);
+    return isValid;
+  }, [cardData]);
 
   const handleNext = () => {
     setErrors({});
-    if (currentStep === 1 && !validateShipping()) return;
-    if (currentStep === 2 && !validatePayment()) return;
+    setPaymentCancelled(false);
+    if (currentStep === 1 && !validateContact()) return;
+    if (currentStep === 2 && !validateDelivery()) return;
+    if (currentStep === 3 && !validatePayment()) return;
     setCurrentStep((s) => s + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleBack = () => {
     setErrors({});
+    setPaymentCancelled(false);
     setCurrentStep((s) => s - 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handlePlaceOrder = async () => {
+  const handlePayNow = () => {
     setIsProcessing(true);
-    await new Promise((res) => setTimeout(res, 2000));
-    addOrder({
-      shippingData,
-      paymentData,
-      cartItems,
-      total,
-      orderNumber,
+    setPaymentCancelled(false);
+
+    initializePayment({
+      email: shippingData.email,
+      amount: total,
+      name: `${shippingData.firstName} ${shippingData.lastName}`,
+      phone: shippingData.phone,
+      metadata: {
+        "Order Number": orderNumber,
+        "Delivery Method": shippingData.shippingMethod,
+        Address: shippingData.address || "Store Pickup",
+        City: shippingData.city || "Lagos",
+      },
+
+      // ✅ Payment confirmed by Paystack - now save to orders
+      onSuccess: (response) => {
+        const cardLast4 = cardData.number.replace(/\s/g, "").slice(-4);
+
+        // This addOrder now correctly maps everything to flat fields
+        addOrder({
+          shippingData,
+          cartItems,
+          total,
+          orderNumber,
+          paymentRef: response.reference,
+          paymentStatus: "paid",
+          cardLast4,
+        });
+
+        setPaymentRef(response.reference);
+        clearCart();
+        setIsSuccess(true);
+        setIsProcessing(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      },
+
+      onClose: () => {
+        setIsProcessing(false);
+        setPaymentCancelled(true);
+      },
     });
-    clearCart();
-    setIsSuccess(true);
-    setIsProcessing(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div ref={pageRef} className="min-h-screen bg-dark pt-20 sm:pt-24 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {isSuccess ? (
-          <SuccessScreen orderNumber={orderNumber} />
+          <SuccessScreen
+            orderNumber={orderNumber}
+            paymentRef={paymentRef}
+            total={total}
+          />
         ) : (
           <>
             <Link
               to="/cart"
-              className="inline-flex items-center gap-2 text-primary-400
-                hover:text-accent transition-colors duration-300 text-sm mb-6"
+              className="inline-flex items-center gap-2 text-primary-500
+                hover:text-accent transition-colors text-sm mb-8 group"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft
+                size={15}
+                className="group-hover:-translate-x-1 transition-transform"
+              />
               Back to Cart
             </Link>
 
             <StepIndicator currentStep={currentStep} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-              <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-8">
+              <div className="lg:col-span-3">
                 <div
                   ref={formRef}
-                  className="bg-dark-200 border border-dark-400
-                  rounded-2xl sm:rounded-3xl p-5 sm:p-8"
+                  className="bg-dark-200 border border-dark-400 rounded-2xl sm:rounded-3xl p-6 sm:p-8"
                 >
                   {currentStep === 1 && (
-                    <ShippingStep
+                    <ContactStep
                       data={shippingData}
-                      onChange={(field, value) =>
-                        setShippingData((p) => ({ ...p, [field]: value }))
+                      onChange={(f, v) =>
+                        setShippingData((p) => ({ ...p, [f]: v }))
                       }
                       errors={errors}
                     />
                   )}
                   {currentStep === 2 && (
-                    <PaymentStep
-                      data={paymentData}
-                      onChange={(field, value) =>
-                        setPaymentData((p) => ({ ...p, [field]: value }))
+                    <DeliveryStep
+                      data={shippingData}
+                      onChange={(f, v) =>
+                        setShippingData((p) => ({ ...p, [f]: v }))
                       }
                       errors={errors}
                     />
                   )}
                   {currentStep === 3 && (
+                    <PaymentStep
+                      cardData={cardData}
+                      onChange={(f, v) =>
+                        setCardData((p) => ({ ...p, [f]: v }))
+                      }
+                      errors={errors}
+                    />
+                  )}
+                  {currentStep === 4 && (
                     <ReviewStep
                       shipping={shippingData}
-                      payment={paymentData}
+                      cardData={cardData}
                       cartItems={cartItems}
-                      subtotal={subtotal}
                       total={total}
                     />
                   )}
 
+                  {/* Payment cancelled banner */}
+                  {paymentCancelled && (
+                    <div
+                      className="mt-5 flex items-start gap-3 p-4
+                      bg-red-500/10 border border-red-500/25 rounded-xl"
+                    >
+                      <AlertCircle
+                        size={15}
+                        className="text-red-400 shrink-0 mt-0.5"
+                      />
+                      <div>
+                        <p className="text-red-400 text-sm font-semibold">
+                          Payment window closed
+                        </p>
+                        <p className="text-primary-500 text-xs mt-0.5">
+                          No charge was made. Click Pay to try again.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Navigation */}
                   <div className="flex items-center justify-between mt-8 pt-6 border-t border-dark-400">
                     {currentStep > 1 ? (
                       <button
                         onClick={handleBack}
-                        className="flex items-center gap-2 text-primary-400
-                          hover:text-accent transition-colors duration-300
-                          text-sm font-semibold"
+                        disabled={isProcessing}
+                        className="flex items-center gap-2 text-primary-400 hover:text-light
+                          transition-colors text-sm font-medium disabled:opacity-40 group"
                       >
-                        <ArrowLeft size={16} />
+                        <ArrowLeft
+                          size={15}
+                          className="group-hover:-translate-x-1 transition-transform"
+                        />
                         Back
                       </button>
                     ) : (
                       <div />
                     )}
 
-                    {currentStep < 3 ? (
+                    {currentStep < 4 ? (
                       <button
                         onClick={handleNext}
-                        className="bg-accent text-dark font-bold text-sm
-                          uppercase tracking-widest px-8 py-3.5 rounded-2xl
-                          hover:bg-light transition-all duration-300
-                          hover:shadow-xl hover:shadow-accent/30
-                          flex items-center gap-2
-                          hover:scale-[1.02] active:scale-95"
+                        className="flex items-center gap-2 bg-accent text-dark font-bold
+                          text-sm uppercase tracking-widest px-7 py-3.5 rounded-2xl
+                          hover:bg-light transition-all duration-300 hover:shadow-xl
+                          hover:shadow-accent/25 hover:scale-[1.02] active:scale-95"
                       >
                         Continue
-                        <ArrowLeft size={16} className="rotate-180" />
+                        <ChevronRight size={16} />
                       </button>
                     ) : (
                       <button
-                        onClick={handlePlaceOrder}
+                        onClick={handlePayNow}
                         disabled={isProcessing}
-                        className="bg-accent text-dark font-bold text-sm
-                          uppercase tracking-widest px-8 py-3.5 rounded-2xl
-                          hover:bg-light transition-all duration-300
-                          hover:shadow-xl hover:shadow-accent/30
-                          flex items-center gap-2
-                          hover:scale-[1.02] active:scale-95
-                          disabled:opacity-70 disabled:cursor-not-allowed
+                        className="flex items-center gap-2.5 bg-accent text-dark font-bold
+                          text-sm uppercase tracking-widest px-7 py-3.5 rounded-2xl
+                          hover:bg-light transition-all duration-300 hover:shadow-xl
+                          hover:shadow-accent/25 hover:scale-[1.02] active:scale-95
+                          disabled:opacity-60 disabled:cursor-not-allowed
                           disabled:hover:scale-100"
                       >
                         {isProcessing ? (
                           <>
-                            <div
-                              className="w-4 h-4 border-2 border-dark/30
-                              border-t-dark rounded-full animate-spin"
-                            />
+                            <Loader2 size={15} className="animate-spin" />
                             Processing...
                           </>
                         ) : (
                           <>
-                            <Lock size={16} />
-                            Place Order · ${total.toFixed(2)}
+                            <Lock size={15} />
+                            Pay {formatPrice(total)}
                           </>
                         )}
                       </button>
@@ -904,12 +1456,11 @@ const Checkout = () => {
                 </div>
               </div>
 
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-2">
                 <OrderSummary
                   cartItems={cartItems}
                   subtotal={subtotal}
-                  shipping={shipping}
-                  tax={tax}
+                  savings={savings}
                   total={total}
                 />
               </div>

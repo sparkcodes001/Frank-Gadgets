@@ -31,26 +31,25 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #00ff88;
+    background: #E63946;
     border-radius: 999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #00cc6a;
+    background: #c1121f;
   }
 }
 
 @layer components {
-  /* ✅ Using accent-dim instead of accent-dark */
   .btn-primary {
-    @apply bg-accent text-dark px-6 py-3 font-bold
+    @apply bg-accent text-white px-6 py-3 font-bold
            hover:bg-accent-dim transition-all duration-300
            tracking-widest text-xs uppercase;
   }
 
   .btn-outline {
     @apply border border-accent text-accent px-6 py-3 font-semibold
-           hover:bg-accent hover:text-dark transition-all duration-300
+           hover:bg-accent hover:text-white transition-all duration-300
            tracking-widest text-xs uppercase;
   }
 
@@ -62,4 +61,15 @@
   .section-padding {
     @apply px-6 py-16 md:px-12 lg:px-24;
   }
+}
+
+/* Card flip effect */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
 }

@@ -6,56 +6,57 @@ import { motion } from "framer-motion";
 import {
   ArrowRight,
   Smartphone,
-  Monitor,
-  Headphones,
   Tablet,
+  Headphones,
+  RefreshCw,
   Zap,
 } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// ✅ FIXED: Laptop image URL
 const categories = [
   {
     id: 1,
-    name: "Smartphones",
-    path: "/products?category=mobile",
+    name: "Phones",
+    path: "/products?category=phones",
     icon: Smartphone,
-    count: 120,
-    image: "/categoriesImg/smartphones.jpg", // ✅ Fixed
-    gradient: "from-blue-400/20 to-orange-500/20",
+    count: 150,
+    image: "/categoriesImg/smartphones.jpg",
+    gradient: "from-red-400/20 to-orange-500/20",
+    description: "iPhone, Samsung, Tecno, Infinix & more",
   },
   {
     id: 2,
-    name: "Laptops",
-    path: "/products?category=pc",
-    icon: Monitor,
-    count: 85,
-    image: "/categoriesImg/laptops.jpg", // ✅ Fixed
-    gradient: "from-blue-500/20 to-purple-500/20",
+    name: "Tablets",
+    path: "/products?category=tablets",
+    icon: Tablet,
+    count: 45,
+    image: "/categoriesImg/tab2.webp",
+    gradient: "from-blue-400/20 to-purple-500/20",
+    description: "iPad, Samsung Tab, Lenovo & more",
   },
   {
     id: 3,
-    name: "Accessories",
-    path: "/products?category=accessories",
+    name: "Gadgets",
+    path: "/products?category=gadgets",
     icon: Headphones,
     count: 200,
-    image: "/categoriesImg/headp.webp", // ✅ Fixed
-    gradient: "from-green-500/20 to-emerald-500/20",
+    image: "/categoriesImg/headp.webp",
+    gradient: "from-green-400/20 to-emerald-500/20",
+    description: "AirPods, Chargers, Cables & more",
   },
   {
     id: 4,
-    name: "Tablets",
-    path: "/products?category=tablet",
-    icon: Tablet,
-    count: 45,
-    image: "/categoriesImg/tab.webp", // ✅ Fixed
-    gradient: "from-pink-500/20 to-rose-500/20",
+    name: "Buy & Swap",
+    path: "/swap",
+    icon: RefreshCw,
+    count: 0,
+    image: "/categoriesImg/tab.webp",
+    gradient: "from-accent/20 to-pink-500/20",
+    description: "Sell your old device or swap for new",
   },
 ];
 
-
-// ✅ FIXED: Brand logos using SimpleIcons CDN (no CORS issues)
 const brands = [
   {
     name: "Apple",
@@ -66,28 +67,36 @@ const brands = [
     logo: "https://cdn.simpleicons.org/samsung/ffffff",
   },
   {
-    name: "Dell",
-    logo: "https://cdn.simpleicons.org/dell/ffffff",
+    name: "Tecno",
+    logo: "https://cdn.simpleicons.org/tecno/ffffff",
   },
   {
-    name: "HP",
-    logo: "https://cdn.simpleicons.org/hp/ffffff",
+    name: "Infinix",
+    logo: "https://cdn.simpleicons.org/infinix/ffffff",
   },
   {
-    name: "Lenovo",
-    logo: "https://cdn.simpleicons.org/lenovo/ffffff",
-  },
-  {
-    name: "Asus",
-    logo: "https://cdn.simpleicons.org/asus/ffffff",
+    name: "Xiaomi",
+    logo: "https://cdn.simpleicons.org/xiaomi/ffffff",
   },
   {
     name: "Google",
     logo: "https://cdn.simpleicons.org/google/ffffff",
   },
   {
+    name: "Huawei",
+    logo: "https://cdn.simpleicons.org/huawei/ffffff",
+  },
+  {
     name: "OnePlus",
     logo: "https://cdn.simpleicons.org/oneplus/ffffff",
+  },
+  {
+    name: "JBL",
+    logo: "https://cdn.simpleicons.org/jbl/ffffff",
+  },
+  {
+    name: "Anker",
+    logo: "https://cdn.simpleicons.org/anker/ffffff",
   },
 ];
 
@@ -109,17 +118,17 @@ const InfiniteMarquee = () => {
           },
         }}
       >
-        {/* Duplicate brands for seamless loop */}
         {[...brands, ...brands, ...brands].map((brand, i) => (
           <div
             key={i}
-            className="flex items-center justify-center min-w-[140px] h-12 grayscale opacity-40
-              hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+            className="flex items-center justify-center min-w-[120px] h-12
+              grayscale opacity-40 hover:grayscale-0 hover:opacity-100
+              transition-all duration-300"
           >
             <img
               src={brand.logo}
               alt={brand.name}
-              className="h-6 object-contain"
+              className="h-5 object-contain"
             />
           </div>
         ))}
@@ -129,9 +138,8 @@ const InfiniteMarquee = () => {
 };
 
 // ── Category Card ──
-const CategoryCard = ({ cat, index }) => {  // ✅ Remove span prop - no longer needed
+const CategoryCard = ({ cat, index }) => {
   const cardRef = useRef(null);
-  const imageRef = useRef(null);
   const IconComponent = cat.icon;
 
   useEffect(() => {
@@ -142,8 +150,8 @@ const CategoryCard = ({ cat, index }) => {  // ✅ Remove span prop - no longer 
         y: 0,
         opacity: 1,
         scale: 1,
-        duration: 0.4,
-        delay: index * 0.1,
+        duration: 0.5,
+        delay: index * 0.12,
         ease: "power3.out",
         scrollTrigger: {
           trigger: cardRef.current,
@@ -157,23 +165,26 @@ const CategoryCard = ({ cat, index }) => {  // ✅ Remove span prop - no longer 
     <Link
       to={cat.path}
       ref={cardRef}
-      className={`group relative overflow-hidden rounded-3xl
+      className="group relative overflow-hidden rounded-2xl
         bg-dark-200 border border-dark-400
-        transition-all duration-500 hover:shadow-2xl
-        block w-full h-full`}
+        hover:border-accent/40
+        transition-all duration-500 hover:shadow-2xl hover:shadow-accent/5
+        block w-full h-full"
     >
       {/* Background Image */}
       <div className="absolute inset-0 overflow-hidden">
         <img
-          ref={imageRef}
           src={cat.image}
           alt={cat.name}
           className="w-full h-full object-cover opacity-30
             group-hover:scale-110 group-hover:opacity-40
             transition-all duration-700"
+          onError={(e) => {
+            e.target.style.display = "none";
+          }}
         />
         <div className={`absolute inset-0 bg-gradient-to-br ${cat.gradient}`} />
-        <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/60 to-transparent" />
       </div>
 
       {/* Content */}
@@ -184,32 +195,51 @@ const CategoryCard = ({ cat, index }) => {  // ✅ Remove span prop - no longer 
           group-hover:scale-110 group-hover:bg-accent/20 group-hover:border-accent/50
           transition-all duration-300"
         >
-          <IconComponent size={24} />
+          <IconComponent size={22} />
         </div>
 
-        <h3 className="font-display font-bold text-2xl sm:text-3xl text-light mb-2
-          group-hover:text-accent transition-colors duration-300">
+        <h3
+          className="font-display font-bold text-xl sm:text-2xl lg:text-3xl
+          text-light mb-1 group-hover:text-accent transition-colors duration-300"
+        >
           {cat.name}
         </h3>
 
+        <p className="text-primary-500 text-xs sm:text-sm mb-3">
+          {cat.description}
+        </p>
+
         <div className="flex items-center justify-between">
-          <span className="text-primary-400 text-sm font-medium">
-            {cat.count}+ Products
-          </span>
-          <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/30
+          {cat.count > 0 ? (
+            <span className="text-primary-400 text-sm font-medium">
+              {cat.count}+ Items
+            </span>
+          ) : (
+            <span className="text-accent text-sm font-medium">
+              Free Valuation →
+            </span>
+          )}
+          <div
+            className="w-10 h-10 rounded-full bg-accent/10 border border-accent/30
             flex items-center justify-center text-accent
-            group-hover:translate-x-1 transition-all duration-300">
-            <ArrowRight size={18} />
+            group-hover:translate-x-1 group-hover:bg-accent/20
+            transition-all duration-300"
+          >
+            <ArrowRight size={16} />
           </div>
         </div>
       </div>
 
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100
+      {/* Hover glow */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100
         bg-gradient-to-tr from-accent/5 via-transparent to-transparent
-        transition-opacity duration-500 pointer-events-none" />
+        transition-opacity duration-500 pointer-events-none"
+      />
     </Link>
   );
 };
+
 // ── Main Section ──
 const Categories = () => {
   const sectionRef = useRef(null);
@@ -238,8 +268,9 @@ const Categories = () => {
       <div className="section-padding pb-8 sm:pb-10">
         <div className="max-w-7xl mx-auto text-center space-y-3">
           <div
-            className="cat-heading flex items-center justify-center gap-2 text-accent text-xs sm:text-sm
-            uppercase tracking-[0.3em] font-semibold mb-2"
+            className="cat-heading flex items-center justify-center gap-2
+            text-accent text-xs sm:text-sm uppercase tracking-[0.3em]
+            font-semibold mb-2"
           >
             <Zap size={14} className="animate-pulse" />
             Browse By Category
@@ -249,13 +280,16 @@ const Categories = () => {
             text-3xl sm:text-4xl lg:text-5xl text-light"
           >
             Find Your Perfect{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-light">
+            <span
+              className="text-transparent bg-clip-text bg-gradient-to-r
+              from-accent to-light"
+            >
               Device
             </span>
           </h2>
           <p className="cat-heading text-primary-400 text-sm sm:text-base max-w-xl mx-auto">
-            Explore our handpicked collection across phones, laptops, tablets
-            and accessories
+            From smartphones to gadgets — we've got you covered. We buy, sell
+            and swap!
           </p>
         </div>
       </div>
@@ -263,31 +297,23 @@ const Categories = () => {
       {/* ── Bento Grid ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {/* Smartphones - tall left card */}
-          <div className="row-span-2 min-h-[500px]">
-            {" "}
-            {/* ✅ Add min-h here */}
-            <CategoryCard cat={categories[0]} index={0} className="h-full" />
+          {/* Phones - tall left card */}
+          <div className="sm:row-span-2 min-h-[300px] sm:min-h-[500px]">
+            <CategoryCard cat={categories[0]} index={0} />
           </div>
 
-          {/* Laptops - wide top right */}
-          <div className="sm:col-span-1 lg:col-span-2 min-h-[240px]">
-            {" "}
-            {/* ✅ Add min-h here */}
+          {/* Tablets - top right */}
+          <div className="min-h-[240px]">
             <CategoryCard cat={categories[1]} index={1} />
           </div>
 
-          {/* Accessories */}
+          {/* Gadgets */}
           <div className="min-h-[240px]">
-            {" "}
-            {/* ✅ wrap with min-h */}
             <CategoryCard cat={categories[2]} index={2} />
           </div>
 
-          {/* Tablets */}
-          <div className="min-h-[240px]">
-            {" "}
-            {/* ✅ wrap with min-h */}
+          {/* Buy & Swap - spans 2 cols on desktop */}
+          <div className="sm:col-span-2 min-h-[200px]">
             <CategoryCard cat={categories[3]} index={3} />
           </div>
         </div>
@@ -301,10 +327,10 @@ const Categories = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {[
-              { value: "450+", label: "Products", icon: "📦" },
-              { value: "20+", label: "Brands", icon: "🏆" },
-              { value: "5K+", label: "Customers", icon: "🎉" },
-              { value: "24/7", label: "Support", icon: "💬" },
+              { value: "300+", label: "Gadgets", icon: "📦" },
+              { value: "10+", label: "Brands", icon: "🏆" },
+              { value: "2K+", label: "Happy Customers", icon: "🎉" },
+              { value: "24H", label: "Delivery", icon: "🚀" },
             ].map((stat, i) => (
               <div
                 key={i}
@@ -320,7 +346,8 @@ const Categories = () => {
                   {stat.icon}
                 </div>
                 <p
-                  className="font-display font-bold text-xl sm:text-2xl text-accent mb-1
+                  className="font-display font-bold text-xl sm:text-2xl
+                  text-accent mb-1
                   group-hover:text-light transition-colors duration-300"
                 >
                   {stat.value}
@@ -334,7 +361,7 @@ const Categories = () => {
         </div>
       </div>
 
-      {/* Background glow */}
+      {/* Background glow - red tint */}
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
         w-[600px] h-[600px] bg-accent/5 blur-[150px] rounded-full pointer-events-none"

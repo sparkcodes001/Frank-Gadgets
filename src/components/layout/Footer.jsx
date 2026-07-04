@@ -5,11 +5,11 @@ import {
   FaFacebookF,
   FaInstagram,
   FaXTwitter,
-  FaYoutube,
+  FaTiktok,
 } from "react-icons/fa6";
 import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
+import logo from "../../assets/logo.png";
 
-// ✅ No ScrollTrigger needed anymore
 const Footer = () => {
   const footerRef = useRef(null);
 
@@ -20,21 +20,20 @@ const Footer = () => {
     const cols = el.querySelectorAll(".footer-col");
     gsap.set(cols, { y: 40, opacity: 0 });
 
-    // ✅ IntersectionObserver — fires immediately when footer enters view
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           gsap.to(cols, {
             y: 0,
             opacity: 1,
-            duration: 0.45, // ✅ fast
-            stagger: 0.08, // ✅ tight stagger
+            duration: 0.45,
+            stagger: 0.08,
             ease: "power2.out",
           });
           observer.disconnect();
         }
       },
-      { threshold: 0.05 }, // ✅ fires when just 5% of footer is visible
+      { threshold: 0.05 }
     );
 
     observer.observe(el);
@@ -44,25 +43,25 @@ const Footer = () => {
   const quickLinks = [
     { name: "Home", path: "/" },
     { name: "Products", path: "/products" },
-    { name: "Mobiles", path: "/products?category=mobile" },
-    { name: "PCs", path: "/products?category=pc" },
+    { name: "Phones", path: "/products?category=phones" },
+    { name: "Tablets", path: "/products?category=tablets" },
     { name: "Cart", path: "/cart" },
     { name: "Wishlist", path: "/wishlist" },
   ];
 
   const categories = [
-    { name: "Smartphones", path: "/products?category=mobile" },
-    { name: "Laptops", path: "/products?category=pc" },
-    { name: "Desktop PCs", path: "/products?category=pc" },
+    { name: "Smartphones", path: "/products?category=phones" },
+    { name: "Tablets", path: "/products?category=tablets" },
+    { name: "Gadgets", path: "/products?category=gadgets" },
     { name: "Accessories", path: "/products?category=accessories" },
-    { name: "Tablets", path: "/products?category=tablet" },
+    { name: "Buy & Swap", path: "/products?category=swap" },
   ];
 
   const socials = [
     { icon: <FaFacebookF size={16} />, href: "#", name: "Facebook" },
     { icon: <FaInstagram size={16} />, href: "#", name: "Instagram" },
     { icon: <FaXTwitter size={16} />, href: "#", name: "Twitter" },
-    { icon: <FaYoutube size={16} />, href: "#", name: "Youtube" },
+    { icon: <FaTiktok size={16} />, href: "#", name: "Tiktok" },
   ];
 
   return (
@@ -70,19 +69,38 @@ const Footer = () => {
       ref={footerRef}
       className="bg-dark-100 border-t border-dark-400 mt-20"
     >
+      {/* Brand Strip */}
+      <div className="bg-secondary py-3">
+        <div className="max-w-7xl mx-auto px-6 flex items-center 
+          justify-center gap-3">
+          <div className="h-[1px] flex-1 bg-white/10" />
+          <p className="text-white/60 text-xs tracking-widest uppercase">
+            We Buy • We Sell • We Swap
+          </p>
+          <div className="h-[1px] flex-1 bg-white/10" />
+        </div>
+      </div>
+
       {/* Main Footer */}
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+
           {/* Col 1 - Brand */}
           <div className="footer-col space-y-5">
-            <Link to="/">
-              <span className="font-display text-2xl font-bold tracking-widest">
-                BREEM<span className="text-accent">TECH</span>
+            <Link to="/" className="flex items-center gap-2">
+              <img
+                src={logo}
+                alt="Frank Gadgets"
+                className="w-10 h-10 object-contain"
+              />
+              <span className="font-display text-xl font-bold tracking-widest">
+                FRANK<span className="text-accent">GADGETS</span>
               </span>
             </Link>
             <p className="text-primary-400 text-sm leading-relaxed">
-              Your number one destination for the latest mobiles and PCs.
-              Quality products, unbeatable prices.
+              Your number one destination for the latest phones, tablets 
+              and gadgets in Lagos. Quality products, unbeatable prices. 
+              We buy, sell and swap!
             </p>
             <div className="flex items-center gap-3 pt-2">
               {socials.map((social) => (
@@ -91,7 +109,7 @@ const Footer = () => {
                   href={social.href}
                   className="w-9 h-9 rounded-full border border-dark-400
                     flex items-center justify-center text-primary-400
-                    hover:border-accent hover:text-accent
+                    hover:border-accent hover:text-accent hover:bg-accent/10
                     transition-all duration-300"
                 >
                   {social.icon}
@@ -102,7 +120,8 @@ const Footer = () => {
 
           {/* Col 2 - Quick Links */}
           <div className="footer-col space-y-5">
-            <h3 className="font-display font-bold text-light tracking-wider uppercase text-sm">
+            <h3 className="font-display font-bold text-light tracking-wider 
+              uppercase text-sm border-l-2 border-accent pl-3">
               Quick Links
             </h3>
             <ul className="space-y-3">
@@ -111,12 +130,14 @@ const Footer = () => {
                   <Link
                     to={link.path}
                     className="text-primary-400 text-sm hover:text-accent
-                      transition-colors duration-300 flex items-center gap-2 group"
+                      transition-colors duration-300 flex items-center 
+                      gap-2 group"
                   >
                     <ArrowRight
                       size={14}
                       className="opacity-0 -translate-x-2 group-hover:opacity-100
-                        group-hover:translate-x-0 transition-all duration-300 text-accent"
+                        group-hover:translate-x-0 transition-all duration-300 
+                        text-accent"
                     />
                     {link.name}
                   </Link>
@@ -127,7 +148,8 @@ const Footer = () => {
 
           {/* Col 3 - Categories */}
           <div className="footer-col space-y-5">
-            <h3 className="font-display font-bold text-light tracking-wider uppercase text-sm">
+            <h3 className="font-display font-bold text-light tracking-wider 
+              uppercase text-sm border-l-2 border-accent pl-3">
               Categories
             </h3>
             <ul className="space-y-3">
@@ -136,12 +158,14 @@ const Footer = () => {
                   <Link
                     to={cat.path}
                     className="text-primary-400 text-sm hover:text-accent
-                      transition-colors duration-300 flex items-center gap-2 group"
+                      transition-colors duration-300 flex items-center 
+                      gap-2 group"
                   >
                     <ArrowRight
                       size={14}
                       className="opacity-0 -translate-x-2 group-hover:opacity-100
-                        group-hover:translate-x-0 transition-all duration-300 text-accent"
+                        group-hover:translate-x-0 transition-all duration-300 
+                        text-accent"
                     />
                     {cat.name}
                   </Link>
@@ -152,30 +176,31 @@ const Footer = () => {
 
           {/* Col 4 - Contact */}
           <div className="footer-col space-y-5">
-            <h3 className="font-display font-bold text-light tracking-wider uppercase text-sm">
+            <h3 className="font-display font-bold text-light tracking-wider 
+              uppercase text-sm border-l-2 border-accent pl-3">
               Contact Us
             </h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-3 text-primary-400 text-sm">
                 <MapPin size={16} className="text-accent mt-0.5 shrink-0" />
-                <span>123 Fayose Market, Ado-Ekiti, Nigeria</span>
+                <span>Lagos Island, Lagos, Nigeria</span>
               </li>
               <li className="flex items-center gap-3 text-primary-400 text-sm">
                 <Phone size={16} className="text-accent shrink-0" />
                 <a
-                  href="tel:+2341234567890"
+                  href="tel:+2348XXXXXXXXX"
                   className="hover:text-accent transition-colors duration-300"
                 >
-                  +234 706 061 2577
+                  +234 8XX XXX XXXX
                 </a>
               </li>
               <li className="flex items-center gap-3 text-primary-400 text-sm">
                 <Mail size={16} className="text-accent shrink-0" />
                 <a
-                  href="mailto:info@breemtech.com"
+                  href="mailto:info@frankgadgets.com"
                   className="hover:text-accent transition-colors duration-300"
                 >
-                  ibrahimkhalill@gmail.com
+                  info@frankgadgets.com
                 </a>
               </li>
             </ul>
@@ -183,20 +208,20 @@ const Footer = () => {
             {/* Newsletter */}
             <div className="pt-2">
               <p className="text-primary-400 text-xs mb-3">
-                Subscribe for deals & updates
+                Subscribe for deals & updates 🔥
               </p>
               <div className="flex gap-0">
                 <input
                   type="email"
                   placeholder="Your email..."
                   className="bg-dark-300 text-light text-xs px-4 py-2.5
-                    rounded-l-full border border-dark-400 focus:outline-none
+                    border border-dark-400 focus:outline-none
                     focus:border-accent w-full placeholder:text-primary-600
                     transition-colors duration-300"
                 />
                 <button
-                  className="bg-accent text-dark px-4 py-2.5 rounded-r-full
-                  hover:bg-light transition-colors duration-300"
+                  className="bg-accent text-white px-4 py-2.5
+                  hover:bg-accent-dim transition-colors duration-300"
                 >
                   <ArrowRight size={16} />
                 </button>
@@ -208,12 +233,14 @@ const Footer = () => {
 
       {/* Bottom Bar */}
       <div className="border-t border-dark-400">
-        <div
-          className="max-w-7xl mx-auto px-6 py-5
-          flex flex-col md:flex-row items-center justify-between gap-3"
-        >
+        <div className="max-w-7xl mx-auto px-6 py-5
+          flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-primary-500 text-xs">
-            © {new Date().getFullYear()} BREEMTECH. All rights reserved.
+            © {new Date().getFullYear()} FRANK GADGETS. All rights reserved.
+          </p>
+          <p className="text-primary-500 text-xs">
+            Built with ❤️ by{" "}
+            <span className="text-accent">SparkWeb</span>
           </p>
           <div className="flex items-center gap-5">
             <Link

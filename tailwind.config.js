@@ -29,11 +29,15 @@ export default {
           100: "#e8e8e8",
           200: "#d9d9d9",
         },
-        // ✅ accent now green, with shade variants so hover:bg-accent-dim works
+        // Frank Gadgets Brand Colors
         accent: {
-          DEFAULT: "#00ff88",
-          dim: "#00cc6a",
-          muted: "#00994f",
+          DEFAULT: "#E63946", // Red (from logo)
+          dim: "#c1121f", // Darker Red
+          muted: "#9d0208", // Deep Red
+        },
+        secondary: {
+          DEFAULT: "#1D3557", // Blue (from logo)
+          dim: "#457b9d", // Lighter Blue
         },
       },
       fontFamily: {
@@ -42,15 +46,25 @@ export default {
       },
       backgroundImage: {
         "gradient-dark": "linear-gradient(135deg, #080808 0%, #141414 100%)",
-        "gradient-light": "linear-gradient(135deg, #f0f0f0 0%, #d1d1d1 100%)",
+        "gradient-red": "linear-gradient(135deg, #E63946 0%, #1D3557 100%)",
       },
       animation: {
         fadeIn: "fadeIn 0.2s ease-in",
+        slideUp: "slideUp 0.5s ease-out",
+        slideDown: "slideDown 0.5s ease-out",
       },
       keyframes: {
         fadeIn: {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
+        },
+        slideUp: {
+          "0%": { transform: "translateY(20px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        slideDown: {
+          "0%": { transform: "translateY(-20px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
         },
       },
     },

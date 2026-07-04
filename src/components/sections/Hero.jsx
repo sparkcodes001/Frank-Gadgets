@@ -59,7 +59,7 @@ const MessageBox = ({ messages, currentIndex }) => {
 
       {/* Box */}
       <div
-        className="bg-black/70 backdrop-blur-md border-l-2 border-accent
+        className="bg-black/70 backdrop-blur-md border-l-4 border-accent
         border-r border-t border-b border-r-white/5 border-t-white/5 border-b-white/5
         px-6 py-5"
       >
@@ -70,7 +70,7 @@ const MessageBox = ({ messages, currentIndex }) => {
             <span className="relative inline-flex h-1.5 w-1.5 bg-accent" />
           </span>
           <p className="text-accent text-[10px] font-bold uppercase tracking-[0.25em]">
-            BreemTech
+            Frank Gadgets
           </p>
         </div>
 
@@ -89,13 +89,13 @@ const MessageBox = ({ messages, currentIndex }) => {
 // ─── Stats Bar ────────────────────────────────────────────────────────────────
 const StatsBar = () => {
   const stats = [
-    { icon: <Zap size={14} />, value: "500+", label: "Products" },
-    { icon: <Star size={14} />, value: "4.9★", label: "Rating" },
-    { icon: <Shield size={14} />, value: "2 Yr", label: "Warranty" },
+    { icon: <Zap size={14} />, value: "300+", label: "Gadgets" },
+    { icon: <Star size={14} />, value: "4.8★", label: "Rated" },
+    { icon: <Shield size={14} />, value: "Swap", label: "We Buy Too" },
   ];
 
   return (
-    <div className="flex items-center gap-0">
+    <div className="flex items-center gap-0 flex-wrap">
       {stats.map((s, i) => (
         <div
           key={i}
@@ -131,10 +131,10 @@ const Hero = () => {
   const [currentMessage, setCurrentMessage] = useState(0);
 
   const messages = [
-    "What are you looking for today?",
-    "Explore our latest premium smartphones",
-    "Discover powerful laptops for creators",
-    "Best prices. Real warranty. Always.",
+    "What gadget are you looking for today?",
+    "Latest smartphones at unbeatable prices",
+    "Got an old device? We buy & swap too!",
+    "Genuine products. Real warranty. Always.",
     "New arrivals just dropped. Shop now.",
   ];
 
@@ -187,7 +187,7 @@ const Hero = () => {
       <div className="absolute inset-0">
         <img
           src="/herobg.jpg"
-          alt="Hero Background"
+          alt="Frank Gadgets Store"
           className="w-full h-full object-cover object-center"
         />
       </div>
@@ -220,12 +220,12 @@ const Hero = () => {
           }}
         />
 
-        {/* Green tint overlay to blend with accent */}
+        {/* Red tint overlay to blend with accent (Frank Gadgets brand) */}
         <div
           className="absolute inset-0 opacity-10"
           style={{
             background:
-              "radial-gradient(ellipse 60% 80% at 70% 50%, rgba(0,255,136,0.15) 0%, transparent 70%)",
+              "radial-gradient(ellipse 60% 80% at 70% 50%, rgba(230,57,70,0.2) 0%, transparent 70%)",
           }}
         />
       </div>
@@ -243,13 +243,12 @@ const Hero = () => {
         </div>
 
         {/* CTA Buttons */}
-        {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 mb-8 sm:mb-12 w-full sm:w-auto">
           {/* Shop Now */}
           <Link
             to="/products"
             className="group relative overflow-hidden
-      bg-accent text-dark font-bold text-xs uppercase tracking-widest
+      bg-accent text-white font-bold text-xs uppercase tracking-widest
       px-7 py-3.5 flex items-center justify-center gap-2
       hover:bg-accent-dim transition-all duration-300
       hover:shadow-xl hover:shadow-accent/30
@@ -272,14 +271,14 @@ const Hero = () => {
           {/* Bottom row — side by side on mobile */}
           <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
             <Link
-              to="/products?category=mobile"
+              to="/products?category=phones"
               className="group flex-1 sm:flex-none border border-accent/40 text-light
         font-semibold text-xs uppercase tracking-widest
         px-5 sm:px-7 py-3.5 flex items-center justify-center gap-2
         hover:border-accent hover:text-accent
         transition-all duration-300 backdrop-blur-sm bg-black/30"
             >
-              Mobiles
+              Phones
               <ArrowRight
                 size={14}
                 className="opacity-0 -translate-x-2 group-hover:opacity-100
@@ -288,14 +287,14 @@ const Hero = () => {
             </Link>
 
             <Link
-              to="/products?category=pc"
+              to="/products?category=gadgets"
               className="group flex-1 sm:flex-none border border-white/10 text-light/60
         font-semibold text-xs uppercase tracking-widest
         px-5 sm:px-7 py-3.5 flex items-center justify-center gap-2
         hover:border-accent/40 hover:text-light
         transition-all duration-300 backdrop-blur-sm bg-black/20"
             >
-              View PCs
+              Gadgets
               <ArrowRight
                 size={14}
                 className="opacity-0 -translate-x-2 group-hover:opacity-100
@@ -304,6 +303,7 @@ const Hero = () => {
             </Link>
           </div>
         </div>
+
         {/* Stats */}
         <StatsBar />
       </div>
@@ -312,7 +312,8 @@ const Hero = () => {
       <div
         ref={scrollRef}
         className="absolute bottom-6 right-8
-          flex flex-col items-center gap-2 pointer-events-none z-20"
+          flex flex-col items-center gap-2 pointer-events-none z-20
+          hidden sm:flex"
       >
         <div className="w-px h-10 bg-gradient-to-b from-accent/60 to-transparent" />
         <span className="text-accent/60 text-[9px] uppercase tracking-[0.2em] rotate-90 mt-2">
