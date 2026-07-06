@@ -1,11 +1,15 @@
+// src/hooks/usePaystack.js
+import { useCallback } from "react";
+
 const usePaystack = () => {
+  // ✅ Initializes Paystack inline - opens their iframe embedded
   const initializePayment = useCallback(
     ({ email, amount, name, phone, onSuccess, onClose, metadata = {} }) => {
       const loadAndPay = () => {
         const handler = window.PaystackPop.setup({
           key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
           email,
-          amount: Math.round(amount * 100),
+          amount: Math.round(amount * 100), // kobo
           currency: "NGN",
           ref: `FG-${Date.now()}-${Math.random()
             .toString(36)
@@ -36,11 +40,13 @@ const usePaystack = () => {
         handler.openIframe();
       };
 
+      // Already loaded
       if (window.PaystackPop) {
         loadAndPay();
         return;
       }
 
+      // Load script once
       const existing = document.querySelector(
         'script[src="https://js.paystack.co/v1/inline.js"]',
       );
