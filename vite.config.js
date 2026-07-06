@@ -1,3 +1,4 @@
+// vite.config.js
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -7,12 +8,28 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Split vendor chunks to reduce bundle size
-          react: ["react", "react-dom", "react-router-dom"],
-          gsap: ["gsap"],
-          recharts: ["recharts"],
-          three: ["three", "@react-three/fiber", "@react-three/drei"],
+        // ✅ Must be a FUNCTION in Vite 8 / rolldown
+        manualChunks: (id) => {
+          if (id.includes("node_modules")) {
+            if (id.includes("react-dom") || id.includes("react-router")) {
+              return "react-vendor";
+            }
+            if (id.includes("gsap")) {
+              return "gsap";
+            }
+            if (
+              id.includes("recharts") ||
+              id.includes("react-is") ||
+              id.includes("d3")
+            ) {
+              return "charts";
+            }
+            if (id.includes("@react-three") || id.includes("three")) {
+              return "three";
+            }
+            // Everything else in node_modules goes to vendor
+            return "vendor";
+          }
         },
       },
     },
