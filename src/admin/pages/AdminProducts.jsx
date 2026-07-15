@@ -16,8 +16,9 @@ import {
   Upload,
   ImagePlus,
   AlertCircle,
+  Flame,
 } from "lucide-react";
-import { useProducts } from "../../hooks/useProducts";
+import { useProducts, uploadProductImage } from "../../hooks/useProducts";
 import { formatPrice } from "../../utils/formatPrice";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -58,8 +59,8 @@ const emptyForm = {
   stock: "",
   discount: "",
   description: "",
-  image: "", // will hold base64 or blob URL
-  imageFile: null, // holds the actual File object
+  image: "",
+  imageFile: null,
   isNew: false,
   isFeatured: false,
 };
@@ -75,24 +76,21 @@ const ImageUploadZone = ({ value, onChange }) => {
   const processFile = (file) => {
     setError("");
 
-    // Validate type
     if (!file.type.startsWith("image/")) {
       setError("Only image files are allowed (JPG, PNG, WebP)");
       return;
     }
 
-    // Validate size
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
       setError(`Image must be under ${MAX_SIZE_MB}MB`);
       return;
     }
 
-    // Convert to base64 so it persists in localStorage with the product
     const reader = new FileReader();
     reader.onload = (e) => {
       onChange({
-        preview: e.target.result, // base64 string - used as img src
-        file, // File object - in case you send to server
+        preview: e.target.result,
+        file,
       });
     };
     reader.readAsDataURL(file);
@@ -118,6 +116,7 @@ const ImageUploadZone = ({ value, onChange }) => {
   const handleDragLeave = () => setIsDragging(false);
 
   const handleRemove = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     onChange(null);
     setError("");
@@ -130,7 +129,6 @@ const ImageUploadZone = ({ value, onChange }) => {
         Product Image
       </label>
 
-      {/* Drop Zone */}
       <div
         onClick={() => inputRef.current?.click()}
         onDrop={handleDrop}
@@ -147,21 +145,21 @@ const ImageUploadZone = ({ value, onChange }) => {
           }`}
       >
         {value ? (
-          // ── Image Preview ──────────────────────────────────────────────────
           <div className="relative">
             <img
               src={value}
               alt="Product preview"
               className="w-full h-52 object-contain p-4"
             />
-            {/* Overlay on hover */}
             <div
               className="absolute inset-0 bg-black/0 hover:bg-black/40
               transition-all duration-300 flex items-center justify-center
               opacity-0 hover:opacity-100 gap-3"
             >
               <button
+                type="button"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   inputRef.current?.click();
                 }}
@@ -173,6 +171,7 @@ const ImageUploadZone = ({ value, onChange }) => {
                 Change
               </button>
               <button
+                type="button"
                 onClick={handleRemove}
                 className="flex items-center gap-2 bg-red-500/20 text-red-400
                   font-bold text-xs px-4 py-2 rounded-xl border border-red-500/30
@@ -184,7 +183,6 @@ const ImageUploadZone = ({ value, onChange }) => {
             </div>
           </div>
         ) : (
-          // ── Upload Prompt ──────────────────────────────────────────────────
           <div className="flex flex-col items-center justify-center py-10 gap-3">
             <div
               className={`w-14 h-14 rounded-2xl flex items-center justify-center
@@ -217,7 +215,6 @@ const ImageUploadZone = ({ value, onChange }) => {
         )}
       </div>
 
-      {/* Hidden file input */}
       <input
         ref={inputRef}
         type="file"
@@ -226,7 +223,6 @@ const ImageUploadZone = ({ value, onChange }) => {
         className="hidden"
       />
 
-      {/* Error */}
       {error && (
         <p className="text-red-400 text-[11px] flex items-center gap-1">
           <AlertCircle size={11} />
@@ -234,7 +230,6 @@ const ImageUploadZone = ({ value, onChange }) => {
         </p>
       )}
 
-      {/* Info row */}
       {value && (
         <p className="text-primary-600 text-[10px] flex items-center gap-1">
           <Check size={10} className="text-green-400" />
@@ -278,6 +273,10 @@ const AdminProducts = () => {
   const [deleting, setDeleting] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [formError, setFormError] = useState("");
+
+  // ✅ NEW: track which product's featured toggle is in-flight + any errors
+  const [togglingId, setTogglingId] = useState(null);
+  const [toggleError, setToggleError] = useState("");
 
   useEffect(() => {
     if (!loading) {
@@ -349,7 +348,7 @@ const AdminProducts = () => {
       stock: product.stock,
       discount: product.discount || "",
       description: product.description || "",
-      image: product.image || "", // existing base64/url
+      image: product.image || "",
       imageFile: null,
       isNew: product.isNew || false,
       isFeatured: product.isFeatured || false,
@@ -357,14 +356,12 @@ const AdminProducts = () => {
     setShowModal(true);
   };
 
-  // ── Image Upload Handler ──────────────────────────────────────────────────
+  // ── Image Handler ─────────────────────────────────────────────────────────
   const handleImageChange = (result) => {
     if (!result) {
-      // Removed
       setForm((f) => ({ ...f, image: "", imageFile: null }));
       return;
     }
-    // result = { preview: base64, file: File }
     setForm((f) => ({ ...f, image: result.preview, imageFile: result.file }));
   };
 
@@ -372,27 +369,27 @@ const AdminProducts = () => {
   const handleSave = async () => {
     setFormError("");
 
-    // Validate required fields
-    if (!form.name.trim()) {
-      setFormError("Product name is required");
-      return;
-    }
-    if (!form.brand.trim()) {
-      setFormError("Brand is required");
-      return;
-    }
-    if (!form.price) {
-      setFormError("Price is required");
-      return;
-    }
-    if (!form.stock) {
-      setFormError("Stock quantity is required");
-      return;
-    }
+    if (!form.name.trim()) return setFormError("Product name is required");
+    if (!form.brand.trim()) return setFormError("Brand is required");
+    if (!form.price) return setFormError("Price is required");
+    if (!form.stock) return setFormError("Stock quantity is required");
 
     setSaving(true);
 
-    // Build the product data - image is already base64 in form.image
+    let imageUrl = form.image;
+
+    if (form.imageFile) {
+      const uploadResult = await uploadProductImage(form.imageFile);
+
+      if (!uploadResult.success) {
+        setFormError(`Image upload failed: ${uploadResult.error}`);
+        setSaving(false);
+        return;
+      }
+
+      imageUrl = uploadResult.url;
+    }
+
     const productData = {
       name: form.name.trim(),
       brand: form.brand.trim(),
@@ -402,17 +399,14 @@ const AdminProducts = () => {
       stock: Number(form.stock),
       discount: form.discount ? Number(form.discount) : null,
       description: form.description.trim(),
-      image: form.image, // base64 string stored directly
+      image: imageUrl,
       isNew: form.isNew,
       isFeatured: form.isFeatured,
     };
 
-    let result;
-    if (editingProduct) {
-      result = await updateProduct(editingProduct.id, productData);
-    } else {
-      result = await addProduct(productData);
-    }
+    const result = editingProduct
+      ? await updateProduct(editingProduct.id, productData)
+      : await addProduct(productData);
 
     if (result.success) {
       setSaveSuccess(true);
@@ -435,7 +429,41 @@ const AdminProducts = () => {
     setDeleting(false);
   };
 
-  // ── Loading State ─────────────────────────────────────────────────────────
+  // ── ✅ FIXED: Toggle Featured with proper async handling + error surfacing ──
+  const toggleFeatured = async (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setToggleError("");
+    setTogglingId(product.id);
+
+    const result = await updateProduct(product.id, {
+      name: product.name,
+      brand: product.brand,
+      category: product.category,
+      price: product.price,
+      oldPrice: product.oldPrice,
+      stock: product.stock,
+      discount: product.discount,
+      description: product.description,
+      image: product.image,
+      isNew: product.isNew,
+      isFeatured: !product.isFeatured, // ✅ flip it
+    });
+
+    if (!result.success) {
+      setToggleError(
+        result.error ||
+          "Failed to update featured status. Check your Supabase permissions.",
+      );
+      // auto-hide error after a few seconds
+      setTimeout(() => setToggleError(""), 4000);
+    }
+
+    setTogglingId(null);
+  };
+
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -449,6 +477,17 @@ const AdminProducts = () => {
 
   return (
     <div className="space-y-5">
+      {/* ✅ Global toggle-error banner */}
+      {toggleError && (
+        <div
+          className="flex items-center gap-2 p-3 bg-red-500/10
+          border border-red-500/20 rounded-xl"
+        >
+          <AlertCircle size={14} className="text-red-400 shrink-0" />
+          <p className="text-red-400 text-xs">{toggleError}</p>
+        </div>
+      )}
+
       {/* ── Top Bar ───────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div
@@ -465,7 +504,7 @@ const AdminProducts = () => {
               placeholder:text-primary-600 focus:outline-none w-full"
           />
           {search && (
-            <button onClick={() => setSearch("")}>
+            <button type="button" onClick={() => setSearch("")}>
               <X size={14} className="text-primary-500 hover:text-light" />
             </button>
           )}
@@ -473,6 +512,7 @@ const AdminProducts = () => {
 
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border
               text-sm font-semibold transition-all duration-300
@@ -487,6 +527,7 @@ const AdminProducts = () => {
           </button>
 
           <button
+            type="button"
             onClick={openAdd}
             className="flex items-center gap-2 px-4 py-2.5
               bg-accent text-dark rounded-xl font-bold text-sm
@@ -506,13 +547,13 @@ const AdminProducts = () => {
           className="flex flex-wrap gap-4 bg-dark-200
           border border-dark-400 rounded-xl p-4"
         >
-          {/* Category filter */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-primary-500 text-xs font-semibold uppercase tracking-wider">
               Category:
             </span>
             {["all", ...CATEGORIES.map((c) => c.value)].map((c) => (
               <button
+                type="button"
                 key={c}
                 onClick={() => setCategoryFilter(c)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold
@@ -530,7 +571,6 @@ const AdminProducts = () => {
             ))}
           </div>
 
-          {/* Stock filter */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-primary-500 text-xs font-semibold uppercase tracking-wider">
               Stock:
@@ -542,6 +582,7 @@ const AdminProducts = () => {
               { value: "outofstock", label: "Out of Stock" },
             ].map((s) => (
               <button
+                type="button"
                 key={s.value}
                 onClick={() => setStockFilter(s.value)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold
@@ -604,6 +645,7 @@ const AdminProducts = () => {
         >
           <div className="col-span-4">
             <button
+              type="button"
               onClick={() => handleSort("name")}
               className="flex items-center gap-1 hover:text-light transition-colors"
             >
@@ -612,6 +654,7 @@ const AdminProducts = () => {
           </div>
           <div className="col-span-2">
             <button
+              type="button"
               onClick={() => handleSort("category")}
               className="flex items-center gap-1 hover:text-light transition-colors"
             >
@@ -620,6 +663,7 @@ const AdminProducts = () => {
           </div>
           <div className="col-span-2">
             <button
+              type="button"
               onClick={() => handleSort("price")}
               className="flex items-center gap-1 hover:text-light transition-colors"
             >
@@ -628,6 +672,7 @@ const AdminProducts = () => {
           </div>
           <div className="col-span-2">
             <button
+              type="button"
               onClick={() => handleSort("stock")}
               className="flex items-center gap-1 hover:text-light transition-colors"
             >
@@ -654,6 +699,7 @@ const AdminProducts = () => {
               const categoryLabel =
                 CATEGORIES.find((c) => c.value === product.category)?.label ??
                 product.category;
+              const isToggling = togglingId === product.id;
 
               return (
                 <div
@@ -714,7 +760,7 @@ const AdminProducts = () => {
                     </span>
                   </div>
 
-                  {/* Price ✅ Naira */}
+                  {/* Price */}
                   <div className="hidden sm:block sm:col-span-2">
                     <p className="text-light font-semibold text-sm">
                       {formatPrice(product.price)}
@@ -754,8 +800,43 @@ const AdminProducts = () => {
                       </span>
                     </div>
 
+                    {/* ✅ FIXED Featured toggle */}
                     <button
-                      onClick={() => openEdit(product)}
+                      type="button"
+                      onClick={(e) => toggleFeatured(e, product)}
+                      disabled={isToggling}
+                      className={`w-8 h-8 rounded-lg border flex items-center justify-center
+                        transition-all duration-300 hover:scale-110
+                        disabled:opacity-50 disabled:cursor-wait disabled:hover:scale-100
+                        ${
+                          product.isFeatured
+                            ? "bg-accent/10 border-accent/40 text-accent"
+                            : "bg-dark-300 border-dark-400 text-primary-400 hover:text-accent hover:border-accent/40"
+                        }`}
+                      title={
+                        product.isFeatured
+                          ? "Remove from Featured"
+                          : "Add to Featured"
+                      }
+                    >
+                      {isToggling ? (
+                        <Loader size={13} className="animate-spin" />
+                      ) : (
+                        <Flame
+                          size={13}
+                          className={product.isFeatured ? "fill-accent" : ""}
+                        />
+                      )}
+                    </button>
+
+                    {/* Edit */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openEdit(product);
+                      }}
                       className="w-8 h-8 rounded-lg bg-dark-300 border border-dark-400
                         flex items-center justify-center text-primary-400
                         hover:text-accent hover:border-accent/40
@@ -763,8 +844,15 @@ const AdminProducts = () => {
                     >
                       <Edit2 size={13} />
                     </button>
+
+                    {/* Delete */}
                     <button
-                      onClick={() => setDeleteConfirm(product.id)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDeleteConfirm(product.id);
+                      }}
                       className="w-8 h-8 rounded-lg bg-dark-300 border border-dark-400
                         flex items-center justify-center text-primary-400
                         hover:text-red-400 hover:border-red-400/40
@@ -820,6 +908,7 @@ const AdminProducts = () => {
             </div>
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => setDeleteConfirm(null)}
                 disabled={deleting}
                 className="flex-1 py-3 rounded-xl border border-dark-400
@@ -829,6 +918,7 @@ const AdminProducts = () => {
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => handleDelete(deleteConfirm)}
                 disabled={deleting}
                 className="flex-1 py-3 rounded-xl bg-red-500/10
@@ -874,6 +964,7 @@ const AdminProducts = () => {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="w-8 h-8 rounded-lg bg-dark-300 border border-dark-400
                   flex items-center justify-center text-primary-400
@@ -884,24 +975,24 @@ const AdminProducts = () => {
             </div>
 
             <div className="space-y-4">
-              {/* ── Image Upload ────────────────────────────────────────── */}
+              {/* Image Upload */}
               <ImageUploadZone
                 value={form.image}
                 onChange={handleImageChange}
               />
 
-              {/* ── Product Name ─────────────────────────────────────────── */}
+              {/* Product Name */}
               <Field label="Product Name" required>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. Samsung Galaxy S24 Ultra"
+                  placeholder="e.g. iPhone 15 Pro Max"
                   className={inputClass}
                 />
               </Field>
 
-              {/* ── Brand + Category ─────────────────────────────────────── */}
+              {/* Brand + Category */}
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Brand" required>
                   <input
@@ -910,7 +1001,7 @@ const AdminProducts = () => {
                     onChange={(e) =>
                       setForm({ ...form, brand: e.target.value })
                     }
-                    placeholder="e.g. Samsung"
+                    placeholder="e.g. Apple"
                     className={inputClass}
                   />
                 </Field>
@@ -931,7 +1022,7 @@ const AdminProducts = () => {
                 </Field>
               </div>
 
-              {/* ── Price (₦) + Old Price ────────────────────────────────── */}
+              {/* Price + Old Price */}
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Price (₦)" required>
                   <input
@@ -940,7 +1031,7 @@ const AdminProducts = () => {
                     onChange={(e) =>
                       setForm({ ...form, price: e.target.value })
                     }
-                    placeholder="150000"
+                    placeholder="290000"
                     min="0"
                     className={inputClass}
                   />
@@ -952,14 +1043,14 @@ const AdminProducts = () => {
                     onChange={(e) =>
                       setForm({ ...form, oldPrice: e.target.value })
                     }
-                    placeholder="180000"
+                    placeholder="350000"
                     min="0"
                     className={inputClass}
                   />
                 </Field>
               </div>
 
-              {/* ── Stock + Discount ─────────────────────────────────────── */}
+              {/* Stock + Discount */}
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Stock Quantity" required>
                   <input
@@ -988,7 +1079,7 @@ const AdminProducts = () => {
                 </Field>
               </div>
 
-              {/* ── Description ──────────────────────────────────────────── */}
+              {/* Description */}
               <Field label="Description">
                 <textarea
                   value={form.description}
@@ -1001,7 +1092,7 @@ const AdminProducts = () => {
                 />
               </Field>
 
-              {/* ── Toggles ───────────────────────────────────────────────── */}
+              {/* Toggles */}
               <div className="flex items-center gap-6 pt-1">
                 {[
                   { key: "isNew", label: "Mark as New" },
@@ -1030,7 +1121,7 @@ const AdminProducts = () => {
                 ))}
               </div>
 
-              {/* ── Form Error ────────────────────────────────────────────── */}
+              {/* Form Error */}
               {formError && (
                 <div
                   className="flex items-center gap-2 p-3 bg-red-500/10
@@ -1042,12 +1133,13 @@ const AdminProducts = () => {
               )}
             </div>
 
-            {/* ── Modal Actions ─────────────────────────────────────────── */}
+            {/* Modal Actions */}
             <div
-              className="flex gap-3 pt-2 sticky bottom-0
+              className="flex gap-3 sticky bottom-0
               bg-dark-200 pt-4 border-t border-dark-400"
             >
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 disabled={saving}
                 className="flex-1 py-3 rounded-xl border border-dark-400
@@ -1057,6 +1149,7 @@ const AdminProducts = () => {
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving || saveSuccess}
                 className={`flex-1 py-3 rounded-xl font-bold text-sm

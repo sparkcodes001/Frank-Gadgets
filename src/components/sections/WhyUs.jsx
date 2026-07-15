@@ -70,7 +70,6 @@ const WhyUs = () => {
   }, []);
 
   useEffect(() => {
-    // Animate top accent line
     gsap.fromTo(
       lineRef.current,
       { scaleX: 0, transformOrigin: "left" },
@@ -85,7 +84,6 @@ const WhyUs = () => {
       },
     );
 
-    // Header text
     gsap.fromTo(
       ".whyus-header",
       { y: 40, opacity: 0 },
@@ -102,7 +100,6 @@ const WhyUs = () => {
       },
     );
 
-    // Cards stagger
     gsap.fromTo(
       ".perk-card",
       { y: 60, opacity: 0 },
@@ -119,7 +116,6 @@ const WhyUs = () => {
       },
     );
 
-    // Stat counters pop in
     gsap.fromTo(
       ".stat-number",
       { scale: 0.5, opacity: 0 },
@@ -146,13 +142,13 @@ const WhyUs = () => {
         from-accent via-accent/50 to-transparent"
       />
 
-      {/* Background grid texture - updated to red */}
+      {/* Background grid texture — gold tint */}
       <div
         className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(230,57,70,0.3) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(230,57,70,0.3) 1px, transparent 1px)
+            linear-gradient(rgba(200,155,92,0.3) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(200,155,92,0.3) 1px, transparent 1px)
           `,
           backgroundSize: "40px 40px",
         }}
@@ -171,10 +167,7 @@ const WhyUs = () => {
           <div className="space-y-3">
             <div className="whyus-header flex items-center gap-2">
               <div className="h-px w-8 bg-accent" />
-              <span
-                className="text-accent text-[11px] font-bold
-                uppercase tracking-[0.3em]"
-              >
+              <span className="text-accent text-[11px] font-bold uppercase tracking-[0.3em]">
                 Why Frank Gadgets
               </span>
             </div>
@@ -187,26 +180,20 @@ const WhyUs = () => {
                 className="text-transparent bg-clip-text"
                 style={{
                   backgroundImage:
-                    "linear-gradient(90deg, #E63946 0%, #f0f0f0 100%)",
+                    "linear-gradient(90deg, #C89B5C 0%, #F7F1E7 100%)",
                 }}
               >
                 We Build Trust.
               </span>
             </h2>
-            <p
-              className="whyus-header text-primary-400 text-sm sm:text-base 
-              max-w-md leading-relaxed"
-            >
+            <p className="whyus-header text-primary-400 text-sm sm:text-base max-w-md leading-relaxed">
               From the moment you walk in or shop online — we buy, sell & swap
               gadgets with honesty and care. Every time.
             </p>
           </div>
 
           {/* Big stat */}
-          <div
-            className="whyus-header shrink-0 border-l-2 border-accent pl-5
-            hidden sm:block"
-          >
+          <div className="whyus-header shrink-0 border-l-2 border-accent pl-5 hidden sm:block">
             <p className="font-display font-bold text-4xl lg:text-5xl text-light">
               2k+
             </p>
@@ -228,7 +215,6 @@ const WhyUs = () => {
                 hover:bg-dark-300 transition-all duration-500
                 relative overflow-hidden cursor-default"
             >
-              {/* Top hover line */}
               <div
                 className="absolute top-0 left-0 right-0 h-px
                   bg-gradient-to-r from-accent to-transparent
@@ -236,7 +222,6 @@ const WhyUs = () => {
                   transition-transform duration-500 origin-left"
               />
 
-              {/* Corner accent */}
               <div
                 className="absolute bottom-0 right-0 w-16 h-16
                   bg-accent/5 group-hover:bg-accent/10
@@ -244,7 +229,6 @@ const WhyUs = () => {
                 style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
               />
 
-              {/* Icon */}
               <div
                 className="w-11 h-11 flex items-center justify-center
                 text-accent bg-accent/10 mb-5 rounded-xl
@@ -254,20 +238,15 @@ const WhyUs = () => {
                 {perk.icon}
               </div>
 
-              {/* Stat */}
               <div className="stat-number mb-3">
                 <span className="font-display font-bold text-2xl text-accent leading-none">
                   {perk.stat}
                 </span>
-                <span
-                  className="text-primary-600 text-[10px] uppercase 
-                  tracking-widest ml-2"
-                >
+                <span className="text-primary-600 text-[10px] uppercase tracking-widest ml-2">
                   {perk.statLabel}
                 </span>
               </div>
 
-              {/* Title */}
               <h3
                 className="font-semibold text-light text-base mb-2
                 group-hover:text-accent transition-colors duration-300"
@@ -275,7 +254,6 @@ const WhyUs = () => {
                 {perk.title}
               </h3>
 
-              {/* Desc */}
               <p className="text-primary-500 text-sm leading-relaxed">
                 {perk.desc}
               </p>
@@ -284,10 +262,7 @@ const WhyUs = () => {
         </div>
 
         {/* Bottom strip */}
-        <div
-          className="mt-px border border-white/5 bg-white/5
-          grid grid-cols-2 sm:grid-cols-4"
-        >
+        <div className="mt-px border border-white/5 bg-white/5 grid grid-cols-2 sm:grid-cols-4">
           {[
             { value: "300+", label: "Products" },
             { value: "4.8★", label: "Avg Rating" },
@@ -301,16 +276,10 @@ const WhyUs = () => {
                 ${i !== 3 ? "border-r border-white/5" : ""}`}
             >
               <div>
-                <p
-                  className="font-display font-bold text-xl sm:text-2xl 
-                  text-accent"
-                >
+                <p className="font-display font-bold text-xl sm:text-2xl text-accent">
                   {s.value}
                 </p>
-                <p
-                  className="text-primary-600 text-[10px] uppercase 
-                  tracking-widest mt-0.5"
-                >
+                <p className="text-primary-600 text-[10px] uppercase tracking-widest mt-0.5">
                   {s.label}
                 </p>
               </div>

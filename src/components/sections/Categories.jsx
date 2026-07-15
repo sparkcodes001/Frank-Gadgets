@@ -22,7 +22,7 @@ const categories = [
     icon: Smartphone,
     count: 150,
     image: "/categoriesImg/smartphones.jpg",
-    gradient: "from-red-400/20 to-orange-500/20",
+    gradient: "from-accent/20 to-accent-light/20",
     description: "iPhone, Samsung, Tecno, Infinix & more",
   },
   {
@@ -32,7 +32,7 @@ const categories = [
     icon: Tablet,
     count: 45,
     image: "/categoriesImg/tab2.webp",
-    gradient: "from-blue-400/20 to-purple-500/20",
+    gradient: "from-secondary/20 to-accent-glow/20",
     description: "iPad, Samsung Tab, Lenovo & more",
   },
   {
@@ -42,7 +42,7 @@ const categories = [
     icon: Headphones,
     count: 200,
     image: "/categoriesImg/headp.webp",
-    gradient: "from-green-400/20 to-emerald-500/20",
+    gradient: "from-accent-glow/20 to-secondary-dim/20",
     description: "AirPods, Chargers, Cables & more",
   },
   {
@@ -52,52 +52,22 @@ const categories = [
     icon: RefreshCw,
     count: 0,
     image: "/categoriesImg/tab.webp",
-    gradient: "from-accent/20 to-pink-500/20",
+    gradient: "from-accent/25 to-secondary/25",
     description: "Sell your old device or swap for new",
   },
 ];
 
 const brands = [
-  {
-    name: "Apple",
-    logo: "https://cdn.simpleicons.org/apple/ffffff",
-  },
-  {
-    name: "Samsung",
-    logo: "https://cdn.simpleicons.org/samsung/ffffff",
-  },
-  {
-    name: "Tecno",
-    logo: "https://cdn.simpleicons.org/tecno/ffffff",
-  },
-  {
-    name: "Infinix",
-    logo: "https://cdn.simpleicons.org/infinix/ffffff",
-  },
-  {
-    name: "Xiaomi",
-    logo: "https://cdn.simpleicons.org/xiaomi/ffffff",
-  },
-  {
-    name: "Google",
-    logo: "https://cdn.simpleicons.org/google/ffffff",
-  },
-  {
-    name: "Huawei",
-    logo: "https://cdn.simpleicons.org/huawei/ffffff",
-  },
-  {
-    name: "OnePlus",
-    logo: "https://cdn.simpleicons.org/oneplus/ffffff",
-  },
-  {
-    name: "JBL",
-    logo: "https://cdn.simpleicons.org/jbl/ffffff",
-  },
-  {
-    name: "Anker",
-    logo: "https://cdn.simpleicons.org/anker/ffffff",
-  },
+  { name: "Apple", logo: "https://cdn.simpleicons.org/apple/ffffff" },
+  { name: "Samsung", logo: "https://cdn.simpleicons.org/samsung/ffffff" },
+  { name: "Tecno", logo: "https://cdn.simpleicons.org/tecno/ffffff" },
+  { name: "Infinix", logo: "https://cdn.simpleicons.org/infinix/ffffff" },
+  { name: "Xiaomi", logo: "https://cdn.simpleicons.org/xiaomi/ffffff" },
+  { name: "Google", logo: "https://cdn.simpleicons.org/google/ffffff" },
+  { name: "Huawei", logo: "https://cdn.simpleicons.org/huawei/ffffff" },
+  { name: "OnePlus", logo: "https://cdn.simpleicons.org/oneplus/ffffff" },
+  { name: "JBL", logo: "https://cdn.simpleicons.org/jbl/ffffff" },
+  { name: "Anker", logo: "https://cdn.simpleicons.org/anker/ffffff" },
 ];
 
 // ── Infinite Marquee ──
@@ -106,9 +76,7 @@ const InfiniteMarquee = () => {
     <div className="w-full overflow-hidden bg-dark-200 border-y border-dark-400 py-6">
       <motion.div
         className="flex gap-12 whitespace-nowrap"
-        animate={{
-          x: [0, -1920],
-        }}
+        animate={{ x: [0, -1920] }}
         transition={{
           x: {
             repeat: Infinity,
@@ -168,7 +136,7 @@ const CategoryCard = ({ cat, index }) => {
       className="group relative overflow-hidden rounded-2xl
         bg-dark-200 border border-dark-400
         hover:border-accent/40
-        transition-all duration-500 hover:shadow-2xl hover:shadow-accent/5
+        transition-all duration-500 hover:shadow-[0_25px_60px_-15px_rgba(200,155,92,0.15)]
         block w-full h-full"
     >
       {/* Background Image */}
@@ -297,22 +265,15 @@ const Categories = () => {
       {/* ── Bento Grid ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {/* Phones - tall left card */}
           <div className="sm:row-span-2 min-h-[300px] sm:min-h-[500px]">
             <CategoryCard cat={categories[0]} index={0} />
           </div>
-
-          {/* Tablets - top right */}
           <div className="min-h-[240px]">
             <CategoryCard cat={categories[1]} index={1} />
           </div>
-
-          {/* Gadgets */}
           <div className="min-h-[240px]">
             <CategoryCard cat={categories[2]} index={2} />
           </div>
-
-          {/* Buy & Swap - spans 2 cols on desktop */}
           <div className="sm:col-span-2 min-h-[200px]">
             <CategoryCard cat={categories[3]} index={3} />
           </div>
@@ -361,7 +322,7 @@ const Categories = () => {
         </div>
       </div>
 
-      {/* Background glow - red tint */}
+      {/* Background glow — gold tint */}
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
         w-[600px] h-[600px] bg-accent/5 blur-[150px] rounded-full pointer-events-none"

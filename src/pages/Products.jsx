@@ -1,3 +1,4 @@
+// src/pages/Products.jsx
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { gsap } from "gsap";
@@ -13,7 +14,6 @@ import {
 import { useProducts } from "../hooks/useProducts";
 import ProductCard from "../components/ui/ProductCard";
 
-// ✅ FIX 1: isMobile as a function that returns a boolean
 const isMobile = () => window.innerWidth < 1024;
 
 const Products = () => {
@@ -24,7 +24,7 @@ const Products = () => {
     searchParams.get("category") || "all",
   );
   const [selectedBrand, setSelectedBrand] = useState("all");
-  const [priceRange, setPriceRange] = useState([0, 3000]);
+  const [priceRange, setPriceRange] = useState([0, 2000000]); // ✅ Naira range
   const [sortBy, setSortBy] = useState("featured");
   const [gridCols, setGridCols] = useState(3);
   const [showFilters, setShowFilters] = useState(false);
@@ -34,20 +34,21 @@ const Products = () => {
 
   const brands = ["all", ...new Set(products.map((p) => p.brand))];
 
+  // ✅ Categories now match admin exactly
   const categories = [
     { value: "all", label: "All Products", icon: "🔥" },
-    { value: "mobile", label: "Smartphones", icon: "📱" },
-    { value: "pc", label: "Laptops & PCs", icon: "💻" },
+    { value: "phones", label: "Smartphones", icon: "📱" },
+    { value: "tablets", label: "Tablets", icon: "📟" },
     { value: "accessories", label: "Accessories", icon: "🎧" },
-    { value: "tablet", label: "Tablets", icon: "📱" },
+    { value: "gadgets", label: "Gadgets", icon: "🎮" },
   ];
 
-  // ✅ Scroll to top on mount
+  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
-  // ── Filter & Sort ──
+  // ── Filter & Sort ──────────────────────────────────────────────────────────
   const filteredProducts = products
     .filter((p) => {
       const matchCategory =
@@ -74,11 +75,9 @@ const Products = () => {
       }
     });
 
-  // ── GSAP entrance ──
+  // ── GSAP entrance ──────────────────────────────────────────────────────────
   useEffect(() => {
-    // ✅ FIX 2: Call isMobile as a function with ()
     if (isMobile()) return;
-
     gsap.fromTo(
       headerRef.current,
       { y: -20, opacity: 0 },
@@ -91,7 +90,7 @@ const Products = () => {
     );
   }, []);
 
-  // ── Mobile drawer animation ──
+  // ── Mobile drawer animation ────────────────────────────────────────────────
   useEffect(() => {
     if (!drawerRef.current) return;
     if (showFilters) {
@@ -109,7 +108,7 @@ const Products = () => {
     }
   }, [showFilters]);
 
-  // ── Sync URL params ──
+  // ── Sync URL params ────────────────────────────────────────────────────────
   useEffect(() => {
     const cat = searchParams.get("category");
     if (cat) setSelectedCategory(cat);
@@ -118,12 +117,12 @@ const Products = () => {
   const resetFilters = () => {
     setSelectedCategory("all");
     setSelectedBrand("all");
-    setPriceRange([0, 3000]);
+    setPriceRange([0, 2000000]); // ✅ reset to Naira range
     setSearchQuery("");
     setSortBy("featured");
   };
 
-  // ── Filter Content ──
+  // ── Filter Content ─────────────────────────────────────────────────────────
   const FilterContent = () => (
     <div className="space-y-6">
       {/* Category */}
@@ -191,7 +190,7 @@ const Products = () => {
         </div>
       </div>
 
-      {/* Price Range */}
+      {/* Price Range ✅ Fixed for Naira */}
       <div>
         <h3 className="font-display font-bold text-light text-xs uppercase tracking-widest mb-3">
           Price Range
@@ -199,16 +198,18 @@ const Products = () => {
         <input
           type="range"
           min="0"
-          max="3000"
-          step="100"
+          max="2000000"
+          step="10000"
           value={priceRange[1]}
           onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
           className="w-full accent-amber-500 cursor-pointer"
         />
         <div className="flex items-center justify-between text-sm mt-2">
-          <span className="text-primary-500 text-xs">${priceRange[0]}</span>
+          <span className="text-primary-500 text-xs">
+            ₦{priceRange[0].toLocaleString()}
+          </span>
           <span className="text-accent font-bold text-sm">
-            Up to ${priceRange[1].toLocaleString()}
+            Up to ₦{priceRange[1].toLocaleString()}
           </span>
         </div>
       </div>
@@ -225,7 +226,7 @@ const Products = () => {
     </div>
   );
 
-  // ✅ FIX 3: Loading state shown before any conditional returns that depend on products
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="min-h-screen bg-dark pt-20 flex items-center justify-center">
@@ -240,7 +241,7 @@ const Products = () => {
   return (
     <div className="min-h-screen bg-dark pt-20 sm:pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* ── Page Header ── */}
+        {/* Page Header */}
         <div ref={headerRef} className="mb-6 sm:mb-8">
           <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-light mb-2">
             All{" "}
@@ -253,7 +254,7 @@ const Products = () => {
           </p>
         </div>
 
-        {/* ── Top Controls ── */}
+        {/* Top Controls */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6 sm:mb-8">
           {/* Search */}
           <div className="relative flex-1">
@@ -335,7 +336,7 @@ const Products = () => {
           </div>
         </div>
 
-        {/* ── Main Layout ── */}
+        {/* Main Layout */}
         <div className="flex gap-6">
           {/* Desktop Sidebar */}
           <aside className="sidebar-anim hidden lg:block w-60 xl:w-64 shrink-0">
@@ -355,7 +356,6 @@ const Products = () => {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    // ✅ FIX 4: Call isMobile() as a function
                     index={isMobile() ? 0 : i}
                   />
                 ))}
@@ -378,7 +378,7 @@ const Products = () => {
         </div>
       </div>
 
-      {/* ── Mobile Filter Drawer Backdrop ── */}
+      {/* Mobile Filter Drawer Backdrop */}
       {showFilters && (
         <div
           className="fixed inset-0 bg-dark/80 backdrop-blur-sm z-40 lg:hidden"
@@ -386,7 +386,7 @@ const Products = () => {
         />
       )}
 
-      {/* ── Mobile Filter Drawer ── */}
+      {/* Mobile Filter Drawer */}
       <div
         ref={drawerRef}
         className="fixed bottom-0 left-0 right-0 z-50 lg:hidden

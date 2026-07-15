@@ -17,7 +17,7 @@ gsap.registerPlugin(ScrollTrigger);
 const Newsletter = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [status, setStatus] = useState("idle");
 
   const sectionRef = useRef(null);
   const formRef = useRef(null);
@@ -62,9 +62,7 @@ const Newsletter = () => {
     e.preventDefault();
     setStatus("loading");
 
-    // ✅ Real submission - replace URL with your backend/formspree/emailjs
     try {
-      // Option 1: Formspree (free - just replace YOUR_FORM_ID)
       const res = await fetch("https://formspree.io/f/YOUR_FORM_ID", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,18 +92,9 @@ const Newsletter = () => {
   };
 
   const perks = [
-    {
-      icon: <Gift size={18} />,
-      text: "Exclusive deals & discount codes",
-    },
-    {
-      icon: <Zap size={18} />,
-      text: "Flash sales — first to know",
-    },
-    {
-      icon: <RefreshCw size={18} />,
-      text: "Best swap & trade-in offers",
-    },
+    { icon: <Gift size={18} />, text: "Exclusive deals & discount codes" },
+    { icon: <Zap size={18} />, text: "Flash sales — first to know" },
+    { icon: <RefreshCw size={18} />, text: "Best swap & trade-in offers" },
     {
       icon: <MessageCircle size={18} />,
       text: "New arrivals straight to your inbox",
@@ -119,23 +108,23 @@ const Newsletter = () => {
     >
       {/* Background elements */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Red glow */}
+        {/* Gold glow */}
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
           w-[600px] h-[400px] bg-accent/10 blur-[130px] rounded-full"
         />
-        {/* Blue glow opposite side */}
+        {/* Sierra blue glow opposite side */}
         <div
           className="absolute bottom-0 right-0
           w-[300px] h-[300px] bg-secondary/10 blur-[100px] rounded-full"
         />
-        {/* Grid pattern */}
+        {/* Grid pattern — gold tint */}
         <div
           className="absolute inset-0 opacity-[0.02]"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(230,57,70,0.2) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(230,57,70,0.2) 1px, transparent 1px)
+              linear-gradient(rgba(200,155,92,0.25) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(200,155,92,0.25) 1px, transparent 1px)
             `,
             backgroundSize: "50px 50px",
           }}
@@ -146,7 +135,7 @@ const Newsletter = () => {
         <div
           className="bg-dark-200 border border-dark-400 rounded-3xl sm:rounded-[2.5rem]
           overflow-hidden hover:border-accent/40 transition-all duration-500
-          hover:shadow-2xl hover:shadow-accent/10"
+          hover:shadow-[0_25px_60px_-15px_rgba(200,155,92,0.15)]"
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
             {/* ── LEFT: Content ── */}
@@ -156,35 +145,23 @@ const Newsletter = () => {
                 justify-center bg-gradient-to-br from-accent/5 to-transparent
                 border-b lg:border-b-0 lg:border-r border-dark-400"
             >
-              {/* Frank Gadgets logo watermark */}
-              <div
-                className="absolute bottom-6 right-6 opacity-5 
-                pointer-events-none select-none"
-              >
+              <div className="absolute bottom-6 right-6 opacity-5 pointer-events-none select-none">
                 <p className="font-display font-bold text-6xl text-accent">
                   FG
                 </p>
               </div>
 
-              {/* Badge */}
               <div
                 className="inline-flex items-center gap-2 w-fit
                 bg-accent/10 border border-accent/30 rounded-full
                 px-4 py-2 mb-6"
               >
-                <span
-                  className="w-1.5 h-1.5 bg-accent rounded-full 
-                  animate-pulse"
-                />
-                <span
-                  className="text-accent text-xs font-semibold 
-                  uppercase tracking-widest"
-                >
+                <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                <span className="text-accent text-xs font-semibold uppercase tracking-widest">
                   Join Our Community
                 </span>
               </div>
 
-              {/* Heading */}
               <h2
                 className="font-display font-bold text-3xl sm:text-4xl 
                 lg:text-5xl text-light mb-4 leading-tight"
@@ -199,23 +176,17 @@ const Newsletter = () => {
                 First
               </h2>
 
-              {/* Sub */}
-              <p
-                className="text-primary-400 text-sm sm:text-base 
-                leading-relaxed mb-8"
-              >
+              <p className="text-primary-400 text-sm sm:text-base leading-relaxed mb-8">
                 Be the first to know about new arrivals, flash sales and
                 exclusive Frank Gadgets offers. Drop your email and phone number
                 below — no spam, promise! 🤝
               </p>
 
-              {/* Perks */}
               <div className="space-y-3 mb-8">
                 {perks.map((perk, i) => (
                   <div
                     key={i}
-                    className="perk-item flex items-center gap-3 
-                      text-sm text-primary-300"
+                    className="perk-item flex items-center gap-3 text-sm text-primary-300"
                   >
                     <div
                       className="w-8 h-8 rounded-lg bg-accent/10 
@@ -229,7 +200,6 @@ const Newsletter = () => {
                 ))}
               </div>
 
-              {/* Trust */}
               <p className="text-xs text-primary-600 flex items-center gap-2">
                 <CheckCircle size={13} className="text-accent" />
                 Your info is safe with us. Unsubscribe anytime.
@@ -239,11 +209,9 @@ const Newsletter = () => {
             {/* ── RIGHT: Form ── */}
             <div
               ref={rightRef}
-              className="p-8 sm:p-12 lg:p-14 flex flex-col 
-                justify-center bg-dark-300/30"
+              className="p-8 sm:p-12 lg:p-14 flex flex-col justify-center bg-dark-300/30"
             >
               {status === "success" ? (
-                // ✅ Success state
                 <div className="text-center space-y-5 py-8">
                   <div
                     className="success-icon w-20 h-20 bg-accent/10 
@@ -252,17 +220,13 @@ const Newsletter = () => {
                   >
                     <CheckCircle size={36} className="text-accent" />
                   </div>
-                  <h3
-                    className="font-display font-bold text-2xl sm:text-3xl 
-                    text-light"
-                  >
+                  <h3 className="font-display font-bold text-2xl sm:text-3xl text-light">
                     You're In! 🎉
                   </h3>
                   <p className="text-primary-400 text-sm max-w-xs mx-auto">
                     Welcome to the Frank Gadgets family! Watch your inbox for
                     exclusive deals 🔥
                   </p>
-                  {/* Bonus WhatsApp CTA */}
                   <a
                     href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}`}
                     target="_blank"
@@ -277,7 +241,6 @@ const Newsletter = () => {
                   </a>
                 </div>
               ) : status === "error" ? (
-                // ✅ Error state
                 <div className="text-center space-y-4 py-8">
                   <div
                     className="w-16 h-16 bg-red-500/10 border-2 
@@ -294,20 +257,15 @@ const Newsletter = () => {
                   </p>
                   <button
                     onClick={() => setStatus("idle")}
-                    className="text-accent text-sm underline 
-                      hover:text-accent-dim transition-colors"
+                    className="text-accent text-sm underline hover:text-accent-dim transition-colors"
                   >
                     Try again
                   </button>
                 </div>
               ) : (
-                // ✅ Form state
                 <>
                   <div className="mb-8">
-                    <h3
-                      className="font-display font-bold text-xl sm:text-2xl 
-                      text-light mb-1"
-                    >
+                    <h3 className="font-display font-bold text-xl sm:text-2xl text-light mb-1">
                       Stay Updated 📲
                     </h3>
                     <p className="text-primary-500 text-sm">
@@ -320,12 +278,10 @@ const Newsletter = () => {
                     onSubmit={handleSubmit}
                     className="space-y-4"
                   >
-                    {/* Email Input */}
                     <div className="relative">
                       <Mail
                         size={16}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 
-                          text-primary-600"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-600"
                       />
                       <input
                         type="email"
@@ -343,12 +299,10 @@ const Newsletter = () => {
                       />
                     </div>
 
-                    {/* Phone Input */}
                     <div className="relative">
                       <FaWhatsapp
                         size={16}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 
-                          text-green-500"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500"
                       />
                       <input
                         type="tel"
@@ -365,24 +319,20 @@ const Newsletter = () => {
                       />
                     </div>
 
-                    {/* Submit Button */}
                     <button
                       type="submit"
                       disabled={status === "loading"}
                       className="w-full bg-accent text-white font-bold text-sm
                         uppercase tracking-widest rounded-2xl px-8 py-4
                         hover:bg-accent-dim transition-all duration-300
-                        hover:shadow-xl hover:shadow-accent/30
+                        hover:shadow-[0_20px_40px_-10px_rgba(200,155,92,0.35)]
                         disabled:opacity-50 disabled:cursor-not-allowed
                         flex items-center justify-center gap-2 group
                         relative overflow-hidden"
                     >
                       {status === "loading" ? (
                         <>
-                          <div
-                            className="w-4 h-4 border-2 border-white/30 
-                            border-t-white rounded-full animate-spin"
-                          />
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           Subscribing...
                         </>
                       ) : (
@@ -390,12 +340,10 @@ const Newsletter = () => {
                           Subscribe Now
                           <Send
                             size={16}
-                            className="group-hover:translate-x-1 
-                              transition-transform duration-300"
+                            className="group-hover:translate-x-1 transition-transform duration-300"
                           />
                         </>
                       )}
-                      {/* Shimmer */}
                       <span
                         className="absolute inset-0 -translate-x-full
                         group-hover:translate-x-full
@@ -406,22 +354,17 @@ const Newsletter = () => {
                     </button>
                   </form>
 
-                  {/* Divider */}
                   <div className="relative my-6">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-dark-400" />
                     </div>
                     <div className="relative flex justify-center">
-                      <span
-                        className="bg-dark-300 px-4 text-primary-600 
-                        text-xs uppercase tracking-widest"
-                      >
+                      <span className="bg-dark-300 px-4 text-primary-600 text-xs uppercase tracking-widest">
                         or
                       </span>
                     </div>
                   </div>
 
-                  {/* WhatsApp CTA */}
                   <a
                     href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}?text=Hi Frank Gadgets! I'd like to know about your latest deals 🔥`}
                     target="_blank"
@@ -434,23 +377,22 @@ const Newsletter = () => {
                   >
                     <FaWhatsapp
                       size={20}
-                      className="group-hover:scale-110 
-                        transition-transform duration-300"
+                      className="group-hover:scale-110 transition-transform duration-300"
                     />
                     Chat us on WhatsApp
                   </a>
 
-                  {/* Social proof */}
+                  {/* Social proof — gold/blue-grey avatars */}
                   <div className="mt-6 pt-6 border-t border-dark-400/50">
                     <div className="flex items-center gap-3">
                       <div className="flex -space-x-2">
-                        {["E63946", "1D3557", "E63946", "1D3557"].map(
+                        {["C89B5C", "8DA0B8", "DDBC85", "6E8299"].map(
                           (color, i) => (
                             <div
                               key={i}
                               className="w-8 h-8 rounded-full border-2 
-                                border-dark-300 flex items-center 
-                                justify-center text-white text-[9px] font-bold"
+                              border-dark-300 flex items-center 
+                              justify-center text-white text-[9px] font-bold"
                               style={{ backgroundColor: `#${color}` }}
                             >
                               {["FG", "JK", "AB", "MC"][i]}

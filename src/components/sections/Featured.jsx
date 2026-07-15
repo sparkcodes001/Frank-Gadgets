@@ -1,9 +1,10 @@
+// src/components/home/Featured.jsx
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowRight, Flame } from "lucide-react";
-import { getFeatured } from "../../data/products";
+import { ArrowRight, Flame, Loader } from "lucide-react";
+import { useProducts } from "../../hooks/useProducts"; // ✅ use real data
 import ProductCard from "../ui/ProductCard";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -12,7 +13,10 @@ const Featured = () => {
   const sectionRef = useRef(null);
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const allFeatured = getFeatured();
+  const { products, loading } = useProducts(); // ✅ live Supabase data
+
+  // ✅ Only products marked isFeatured in admin will show here
+  const allFeatured = products.filter((p) => p.isFeatured);
 
   const filtered = (
     activeFilter === "all"
@@ -21,6 +25,8 @@ const Featured = () => {
   ).slice(0, 8);
 
   useEffect(() => {
+    if (loading) return;
+
     gsap.fromTo(
       ".featured-title",
       { y: 50, opacity: 0 },
@@ -53,7 +59,7 @@ const Featured = () => {
         },
       },
     );
-  }, []);
+  }, [loading]);
 
   const filters = [
     { label: "🔥 All", value: "all" },
@@ -127,49 +133,63 @@ const Featured = () => {
           </Link>
         </div>
 
-        {/* ── Filter Tabs ── */}
-        <div
-          className="flex items-center gap-2 sm:gap-3 mb-6 sm:mb-8 
-          overflow-x-auto pb-2 
-          scrollbar-none [&::-webkit-scrollbar]:hidden"
-        >
-          {filters.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setActiveFilter(f.value)}
-              className={`filter-btn whitespace-nowrap px-4 py-2 rounded-full
-                text-[10px] sm:text-xs font-bold uppercase tracking-widest
-                transition-all duration-300 border
-                ${
-                  activeFilter === f.value
-                    ? "bg-accent text-white border-accent shadow-lg shadow-accent/20"
-                    : "bg-transparent text-primary-400 border-dark-400 hover:border-accent/50 hover:text-accent"
-                }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Product Grid ── */}
-        {/* 2 cols mobile → 3 cols sm → 4 cols lg */}
-        <div
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 
-          gap-3 sm:gap-4 lg:gap-5"
-        >
-          {filtered.map((product, i) => (
-            <ProductCard key={product.id} product={product} index={i} />
-          ))}
-        </div>
-
-        {/* ── Empty State ── */}
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-4xl mb-4">📦</p>
-            <p className="text-primary-500 text-sm">
-              No products in this category yet. Check back soon!
-            </p>
+        {/* ── Loading State ── */}
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <div className="flex flex-col items-center gap-3">
+              <Loader size={32} className="text-accent animate-spin" />
+              <p className="text-primary-500 text-sm">
+                Loading featured products...
+              </p>
+            </div>
           </div>
+        ) : (
+          <>
+            {/* ── Filter Tabs ── */}
+            <div
+              className="flex items-center gap-2 sm:gap-3 mb-6 sm:mb-8 
+              overflow-x-auto pb-2 
+              scrollbar-none [&::-webkit-scrollbar]:hidden"
+            >
+              {filters.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => setActiveFilter(f.value)}
+                  className={`filter-btn whitespace-nowrap px-4 py-2 rounded-full
+                    text-[10px] sm:text-xs font-bold uppercase tracking-widest
+                    transition-all duration-300 border
+                    ${
+                      activeFilter === f.value
+                        ? "bg-accent text-white border-accent shadow-[0_10px_25px_-5px_rgba(200,155,92,0.3)]"
+                        : "bg-transparent text-primary-400 border-dark-400 hover:border-accent/50 hover:text-accent"
+                    }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* ── Product Grid ── */}
+            <div
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 
+              gap-3 sm:gap-4 lg:gap-5"
+            >
+              {filtered.map((product, i) => (
+                <ProductCard key={product.id} product={product} index={i} />
+              ))}
+            </div>
+
+            {/* ── Empty State ── */}
+            {filtered.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-4xl mb-4">📦</p>
+                <p className="text-primary-500 text-sm">
+                  No featured products yet. Mark products as "Featured" in the
+                  admin panel to display them here.
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {/* ── Bottom CTA ── */}
@@ -183,7 +203,7 @@ const Featured = () => {
               bg-accent text-white px-8 py-4 rounded-full
               font-semibold text-xs uppercase tracking-widest
               transition-all duration-300
-              hover:bg-accent-dim hover:shadow-xl hover:shadow-accent/20"
+              hover:bg-accent-dim hover:shadow-[0_20px_40px_-10px_rgba(200,155,92,0.35)]"
           >
             Explore All Products
             <ArrowRight
@@ -192,7 +212,6 @@ const Featured = () => {
             />
           </Link>
 
-          {/* WhatsApp order option */}
           <a
             href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}?text=Hi! I want to order a gadget from Frank Gadgets 🔥`}
             target="_blank"

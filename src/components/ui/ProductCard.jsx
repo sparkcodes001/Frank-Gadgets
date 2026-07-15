@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { gsap } from "gsap";
-import { ShoppingCart, Heart, Eye, Check, Repeat2 } from "lucide-react";
+import { ShoppingCart, Heart, Eye, Check, Repeat2, Star } from "lucide-react";
 import useCartStore from "../../store/cartStore";
 import useWishlistStore from "../../store/wishlistStore";
 import { formatPrice } from "../../utils/formatPrice";
@@ -90,45 +90,46 @@ const ProductCard = ({ product, index }) => {
   return (
     <div
       ref={cardRef}
-      className="group relative bg-dark-200 border border-dark-400
-        rounded-xl overflow-hidden hover:border-accent/40
-        transition-all duration-300 hover:shadow-xl hover:shadow-accent/5"
+      className="group relative bg-dark-200 border border-white/[0.06]
+        rounded-2xl overflow-hidden
+        hover:border-accent/30 hover:-translate-y-1
+        transition-all duration-500 ease-out
+        hover:shadow-2xl hover:shadow-black/50"
     >
-      {/* ── Image ── */}
-      <div
-        className="relative overflow-hidden aspect-square sm:aspect-auto 
-        sm:h-48 bg-dark-300 rounded-t-xl"
-      >
+      {/* ── Image — now fills the container ── */}
+      <div className="relative overflow-hidden aspect-square bg-dark-300">
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-cover
-            group-hover:scale-105 transition-transform duration-500"
+          className="absolute inset-0 w-full h-full object-cover
+            group-hover:scale-110 transition-transform duration-700 ease-out"
         />
 
-        {/* Gradient */}
+        {/* Bottom fade so text/badges stay readable over busy photos */}
         <div
-          className="absolute inset-0 bg-gradient-to-t 
-          from-dark-200 via-transparent to-transparent"
+          className="absolute inset-0 bg-gradient-to-t
+          from-black/70 via-black/0 to-black/10 pointer-events-none"
         />
 
         {/* ── Badges top left ── */}
         <div
-          className="absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 
-          flex flex-col gap-1"
+          className="absolute top-2 left-2 sm:top-3 sm:left-3
+          flex flex-col gap-1 z-10"
         >
           {product.isNew && (
             <span
-              className="bg-accent text-white text-[8px] sm:text-[9px] 
-              font-bold px-1.5 sm:px-2 py-0.5 uppercase tracking-widest"
+              className="bg-accent text-dark text-[8px] sm:text-[9px]
+              font-bold px-2 py-1 rounded-md uppercase tracking-wider
+              shadow-lg shadow-accent/20"
             >
               New
             </span>
           )}
           {product.discount > 0 && (
             <span
-              className="bg-dark/80 text-accent text-[8px] sm:text-[9px] 
-              font-bold px-1.5 sm:px-2 py-0.5 border-l-2 border-accent"
+              className="bg-red-500 text-white text-[8px] sm:text-[9px]
+              font-bold px-2 py-1 rounded-md
+              shadow-lg shadow-red-500/20"
             >
               -{product.discount}%
             </span>
@@ -138,56 +139,57 @@ const ProductCard = ({ product, index }) => {
         {/* ── Wishlist top right ── */}
         <button
           onClick={handleWishlistToggle}
-          className={`absolute top-1.5 right-1.5 sm:top-2.5 sm:right-2.5
-            w-6 h-6 sm:w-8 sm:h-8 rounded-full z-10
+          className={`absolute top-2 right-2 sm:top-3 sm:right-3
+            w-7 h-7 sm:w-8 sm:h-8 rounded-full z-10
             backdrop-blur-md border flex items-center justify-center
-            transition-all duration-300 active:scale-95 hover:scale-110
+            transition-all duration-300 active:scale-90 hover:scale-110
             ${
               isInWishlist
-                ? "bg-red-500/20 border-red-500/50 text-red-400"
-                : "bg-dark/60 border-white/10 text-white/50 hover:bg-red-500/10 hover:border-red-400/40 hover:text-red-400"
+                ? "bg-red-500/15 border-red-500/40 text-red-400"
+                : "bg-black/40 border-white/10 text-white/70 hover:bg-red-500/10 hover:border-red-400/30 hover:text-red-400"
             }`}
         >
           <Heart
-            size={10}
+            size={12}
             className={`sm:w-[13px] sm:h-[13px] transition-all duration-300
               ${isInWishlist ? "fill-red-400 text-red-400" : ""}`}
           />
         </button>
 
-        {/* ── Hover Actions desktop ── */}
+        {/* ── Hover Actions (desktop) ── */}
         <div
-          className="absolute bottom-0 left-0 right-0
-          flex items-center justify-center gap-2 p-2
+          className="absolute bottom-0 left-0 right-0 z-10
+          bg-gradient-to-t from-black/80 via-black/50 to-transparent
+          pt-10 pb-3 px-3
+          flex items-center justify-center gap-2
           translate-y-full group-hover:translate-y-0
           transition-transform duration-300 ease-out
           hidden sm:flex"
         >
-          {/* Quick view */}
           <Link
             to={`/products/${product.id}`}
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 px-3 py-1.5
-              bg-dark/80 backdrop-blur-sm border border-white/10
-              text-white text-[10px] font-medium
-              hover:bg-accent hover:border-accent hover:text-white
-              transition-all duration-200"
+            className="flex items-center gap-1.5 px-3 py-2 flex-1
+              justify-center rounded-lg
+              bg-white/10 backdrop-blur-sm border border-white/10
+              text-white text-[10px] font-semibold
+              hover:bg-white/20 transition-all duration-200"
           >
             <Eye size={12} />
             Quick View
           </Link>
 
-          {/* Add to cart */}
           <button
             onClick={handleAddToCart}
             disabled={isInCart && !justAdded}
-            className={`flex items-center gap-1.5 px-3 py-1.5
-              backdrop-blur-sm border text-[10px] font-medium
+            className={`flex items-center gap-1.5 px-3 py-2 flex-1
+              justify-center rounded-lg
+              text-[10px] font-semibold
               transition-all duration-200
               ${
-                isInCart
-                  ? "bg-green-500/80 border-green-500/50 text-white"
-                  : "bg-dark/80 border-white/10 text-white hover:bg-accent hover:border-accent"
+                isInCart || justAdded
+                  ? "bg-green-500 text-white"
+                  : "bg-accent text-dark hover:bg-white"
               }`}
           >
             {isInCart || justAdded ? (
@@ -204,16 +206,13 @@ const ProductCard = ({ product, index }) => {
 
         {/* ── Low Stock ── */}
         {product.stock > 0 && product.stock <= 5 && (
-          <div
-            className="absolute bottom-1.5 left-1.5 right-1.5 
-            sm:bottom-2 sm:left-2 sm:right-2"
-          >
+          <div className="absolute bottom-2 left-2 right-2 z-10 sm:hidden">
             <div
-              className="bg-dark/90 px-2 py-0.5 sm:py-1 
-              flex items-center gap-1.5"
+              className="bg-black/70 backdrop-blur-sm px-2 py-1
+              rounded-md flex items-center gap-1.5 w-fit"
             >
-              <span className="w-1 h-1 bg-red-400 animate-pulse" />
-              <span className="text-red-400 text-[8px] sm:text-[9px] font-medium">
+              <span className="w-1 h-1 rounded-full bg-red-400 animate-pulse" />
+              <span className="text-red-400 text-[8px] font-semibold">
                 Only {product.stock} left
               </span>
             </div>
@@ -223,13 +222,13 @@ const ProductCard = ({ product, index }) => {
         {/* ── Out of Stock ── */}
         {product.stock === 0 && (
           <div
-            className="absolute inset-0 bg-dark/60 backdrop-blur-sm
-            flex items-center justify-center"
+            className="absolute inset-0 bg-black/60 backdrop-blur-[2px]
+            flex items-center justify-center z-20"
           >
             <span
-              className="bg-dark-200 border border-dark-400 
-              text-primary-500 text-[10px] font-bold uppercase 
-              tracking-widest px-3 py-1.5"
+              className="bg-dark-200 border border-white/10
+              text-primary-300 text-[10px] font-bold uppercase
+              tracking-widest px-4 py-2 rounded-lg"
             >
               Out of Stock
             </span>
@@ -238,22 +237,35 @@ const ProductCard = ({ product, index }) => {
       </div>
 
       {/* ── Info ── */}
-      <div className="p-2 sm:p-3.5">
-        {/* Brand */}
-        <p
-          className="text-accent text-[8px] sm:text-[10px] font-bold 
-          uppercase tracking-widest mb-0.5 sm:mb-1.5 truncate"
-        >
-          {product.brand}
-        </p>
+      <div className="p-3 sm:p-4">
+        {/* Brand + Rating row */}
+        <div className="flex items-center justify-between mb-1 sm:mb-1.5">
+          <p
+            className="text-accent text-[8px] sm:text-[10px] font-bold
+            uppercase tracking-widest truncate"
+          >
+            {product.brand}
+          </p>
+          {product.rating > 0 && (
+            <div className="flex items-center gap-0.5 shrink-0">
+              <Star
+                size={10}
+                className="fill-amber-400 text-amber-400 sm:w-3 sm:h-3"
+              />
+              <span className="text-primary-400 text-[9px] sm:text-[10px] font-medium">
+                {product.rating}
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Name */}
         <Link to={`/products/${product.id}`}>
           <h3
-            className="text-light font-semibold text-[10px] sm:text-sm 
-            leading-snug line-clamp-2 hover:text-accent 
+            className="text-light font-semibold text-[11px] sm:text-sm
+            leading-snug line-clamp-2 hover:text-accent
             transition-colors duration-200
-            min-h-[24px] sm:min-h-[36px] mb-1.5 sm:mb-3"
+            min-h-[28px] sm:min-h-[40px] mb-2 sm:mb-3"
           >
             {product.name}
           </h3>
@@ -261,64 +273,62 @@ const ProductCard = ({ product, index }) => {
 
         {/* Price + CTA */}
         <div
-          className="flex items-center justify-between pt-1.5 sm:pt-3 
-          border-t border-dark-400"
+          className="flex items-center justify-between pt-2 sm:pt-3
+          border-t border-white/[0.06]"
         >
-          {/* ✅ Naira Price */}
           <div>
             <span
-              className="font-bold text-light text-[11px] sm:text-sm 
+              className="font-bold text-light text-[12px] sm:text-base
               block leading-none"
             >
               {formatPrice(product.price)}
             </span>
             {product.oldPrice && (
               <span
-                className="text-primary-600 text-[8px] sm:text-[10px] 
-                line-through mt-0.5 block"
+                className="text-primary-600 text-[8px] sm:text-[10px]
+                line-through mt-1 block"
               >
                 {formatPrice(product.oldPrice)}
               </span>
             )}
           </div>
 
-          {/* Mobile: icon only | Desktop: icon + text */}
           <button
             onClick={handleAddToCart}
             disabled={isInCart && !justAdded}
             className={`flex items-center justify-center gap-1
-              transition-all duration-300 active:scale-95
-              w-6 h-6 sm:w-auto sm:h-auto
-              sm:px-3.5 sm:py-2 rounded-lg
+              transition-all duration-300 active:scale-90
+              w-7 h-7 sm:w-auto sm:h-auto
+              sm:px-4 sm:py-2.5 rounded-full sm:rounded-lg
               text-[9px] sm:text-[10px] font-bold uppercase tracking-wider
               ${
                 isInCart && !justAdded
-                  ? "bg-green-500/20 text-green-400 cursor-default"
+                  ? "bg-green-500/15 text-green-400 cursor-default"
                   : justAdded
                     ? "bg-green-500 text-white"
-                    : "bg-accent text-white hover:bg-accent-dim"
+                    : "bg-accent text-dark hover:bg-white hover:shadow-lg hover:shadow-accent/20"
               }`}
           >
             {isInCart || justAdded ? (
               <>
-                <Check size={9} className="sm:w-[11px] sm:h-[11px]" />
+                <Check size={10} className="sm:w-[11px] sm:h-[11px]" />
                 <span className="hidden sm:inline">
                   {justAdded ? "Added!" : "In Cart"}
                 </span>
               </>
             ) : (
               <>
-                <ShoppingCart size={9} className="sm:w-[11px] sm:h-[11px]" />
+                <ShoppingCart size={10} className="sm:w-[11px] sm:h-[11px]" />
                 <span className="hidden sm:inline">Add</span>
               </>
             )}
           </button>
         </div>
 
-        {/* ✅ Swap badge - Frank Gadgets USP */}
+        {/* Swap badge */}
         {product.swappable && (
           <div
-            className="mt-2 pt-2 border-t border-dark-400/40
+            className="mt-2.5 pt-2.5 border-t border-white/[0.06]
             flex items-center gap-1.5 text-secondary-dim
             text-[9px] sm:text-[10px] font-medium"
           >

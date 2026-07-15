@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
-// ── Helper to map DB row → app format ──
+// ── Helper to map DB row → app format ──────────────────────────────────────
 const mapProduct = (row) => ({
   id: row.id,
   name: row.name,
@@ -22,7 +22,7 @@ const mapProduct = (row) => ({
   specs: row.specs || {},
 });
 
-// ── Helper to map app format → DB row ──
+// ── Helper to map app format → DB row ──────────────────────────────────────
 const mapToDb = (product) => ({
   name: product.name,
   brand: product.brand,
@@ -42,12 +42,37 @@ const mapToDb = (product) => ({
   specs: product.specs || {},
 });
 
+// ── Upload image to Supabase Storage ───────────────────────────────────────
+export const uploadProductImage = async (file) => {
+  try {
+    const ext = file.name.split(".").pop();
+    const filename = `product-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = `products/${filename}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("product-images")
+      .upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+
+    return { success: true, url: data.publicUrl };
+  } catch (err) {
+    console.error("Image upload error:", err);
+    return { success: false, error: err.message };
+  }
+};
+
 export const useProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ── Fetch all products ──
+  // ── Fetch all products ──────────────────────────────────────────────────
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -66,7 +91,7 @@ export const useProducts = () => {
     }
   };
 
-  // ── Add product ──
+  // ── Add product ────────────────────────────────────────────────────────
   const addProduct = async (product) => {
     try {
       const { data, error } = await supabase
@@ -86,7 +111,7 @@ export const useProducts = () => {
     }
   };
 
-  // ── Update product ──
+  // ── Update product ─────────────────────────────────────────────────────
   const updateProduct = async (id, updates) => {
     try {
       const { data, error } = await supabase
@@ -107,13 +132,11 @@ export const useProducts = () => {
     }
   };
 
-  // ── Delete product ──
+  // ── Delete product ─────────────────────────────────────────────────────
   const deleteProduct = async (id) => {
     try {
       const { error } = await supabase.from("products").delete().eq("id", id);
-
       if (error) throw error;
-
       setProducts((prev) => prev.filter((p) => p.id !== id));
       return { success: true };
     } catch (err) {
@@ -125,7 +148,7 @@ export const useProducts = () => {
   useEffect(() => {
     fetchProducts();
 
-    // ── Real-time subscription ──
+    // ── Real-time subscription ────────────────────────────────────────
     const subscription = supabase
       .channel("products-channel")
       .on(
